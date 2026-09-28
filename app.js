@@ -301,6 +301,24 @@ function redrawFromBase() {
     updateUndoButton();
 }
 
+// 日本語は「高精度(best)」系の言語データを優先して試し、読み込めなければ
+// 順に次の候補、最後は標準データにフォールバックする。
+// ※ ブラウザ側のキャッシュはlang名(jpn)単位のキーなので、標準データと
+//   混ざらないよう候補ごとにcachePathを分けている。
+const JPN_MODEL_CANDIDATES = [
+    { label: "jpn 高精度(best_int)", langPath: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/jpn/4.0.0_best_int", cachePath: "jpn-best-int" },
+    { label: "jpn 高精度(best)", langPath: "https://cdn.jsdelivr.net/gh/tesseract-ocr/tessdata_best@main", gzip: false, cachePath: "jpn-best" },
+    { label: "jpn 標準", langPath: null, cachePath: null }
+];
+const MODEL_LOAD_TIMEOUT_MS = 90000;
+let workerModelLabel = "";
+
+function withTimeout(promise, ms, message) {
+    let timer;
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 async function getWorker(preferredLang = "jpn") {
     if (!window.Tesseract) {
         throw new Error("Tesseract.jsを読み込めませんでした。インターネット接続や外部スクリプト制限を確認してください。");
@@ -315,15 +333,37 @@ async function getWorker(preferredLang = "jpn") {
     }
 
     status(`${preferredLang === "jpn" ? "日本語" : "英語"}OCRエンジンを準備中…\n初回は少し時間がかかります。`);
-    worker = await Tesseract.createWorker(preferredLang, 1, {
-        logger: message => {
-            if (message?.progress != null) {
-                status("実行中…");
-            }
+    const logger = message => {
+        if (message?.progress != null) {
+            status("実行中…");
         }
-    });
-    workerLang = preferredLang;
-    return worker;
+    };
+
+    const candidates = preferredLang === "jpn"
+        ? JPN_MODEL_CANDIDATES
+        : [{ label: `${preferredLang} 標準`, langPath: null, cachePath: null }];
+
+    let lastError = null;
+    for (const c of candidates) {
+        const options = { logger };
+        if (c.langPath) options.langPath = c.langPath;
+        if (c.gzip === false) options.gzip = false;
+        if (c.cachePath) options.cachePath = c.cachePath;
+        try {
+            worker = await withTimeout(
+                Tesseract.createWorker(preferredLang, 1, options),
+                MODEL_LOAD_TIMEOUT_MS,
+                `${c.label} の読み込みがタイムアウトしました。`
+            );
+            workerModelLabel = c.label;
+            workerLang = preferredLang;
+            return worker;
+        } catch (error) {
+            lastError = error;
+            console.warn(`OCRモデル読み込み失敗: ${c.label}`, error);
+        }
+    }
+    throw lastError || new Error("OCRエンジンを準備できませんでした。");
 }
 
 function getOcrLanguage(target) {
@@ -753,6 +793,10 @@ function buildOcrCanvas(){
   return {canvas:oc,scale};
 }
 
+// 二値化Otsuを第1段階のHIT数に関わらず常に追加実行するか。
+// 前回の検証ではヒット数が増えず処理時間だけ約2倍になったため、既定はオフ。
+const ALWAYS_RUN_OTSU = false;
+
 async function collectOcrResults(worker,target){
   const {canvas:oc,scale}=buildOcrCanvas();
   const results=[];
@@ -779,7 +823,7 @@ async function collectOcrResults(worker,target){
   // 第1段階の結果が優先される。
   const fallbackStarted=performance.now();
   const secondPass="二値化Otsu";
-  {
+  if(ALWAYS_RUN_OTSU){
     stats.fallbackUsed=true;
     status("実行中…");
     const variant=makeOcrVariant(oc,secondPass);
@@ -793,8 +837,9 @@ async function collectOcrResults(worker,target){
   // グレー＋コントラストで1件も見つからなかった場合だけ、
   // さらに残りの補助的な全体OCR(Otsu以外)を追加する。
   if(stats.primaryHitCount===0){
+    stats.fallbackUsed=true;
     for(const name of stats.fallbackNames){
-      if(name===secondPass) continue;
+      if(ALWAYS_RUN_OTSU && name===secondPass) continue;
       status("実行中…");
       const variant=makeOcrVariant(oc,name);
       try {
@@ -1157,7 +1202,7 @@ async function diagnoseOCR(){
     const totalElapsed=performance.now()-totalStarted;
     const exactCount=results.reduce((n,r)=>n+r.matches.length,0);
     const candidateCount=results.reduce((n,r)=>n+r.near.length,0);
-    const lines=[`対象文字：${targetText.value}`,`正規化後：${target}`,""];
+    const lines=[`対象文字：${targetText.value}`,`正規化後：${target}`,`使用モデル：${workerModelLabel||"不明"}`,""];
     for(const r of results){
       lines.push(`===== ${r.mode} / PSM 11 =====`,`HIT：${r.matches.length}件`);
       for(const m of r.matches){
@@ -1229,8 +1274,8 @@ async function diagnoseOCR(){
       `候補地点：${candidateGroups.length} / 近似候補救出：${refine.fastRecovered} / 再OCR実行：${refine.attempted} / 再OCR追加パス：${refine.extraPasses} / 既存HITで省略：${refine.skippedExact}`,
       "",
       `※ 今回は速度実験として、まずグレー＋コントラストだけを全体OCRします。`,
-      `※ 二値化Otsuは第1段階のHIT数に関わらず常に追加実行します。`,
-      `※ 第1段階でHITが0件の場合だけ、さらに二値化180・220・反転を追加します。`,
+      `※ 第1段階で1件以上HITした場合、追加の全体OCRは省略します。`,
+      `※ 第1段階でHITが0件の場合だけ、二値化Otsu・180・220・反転を追加します。`,
       `※ 候補地点は同じ位置付近の候補をまとめています。`,
       `※ 近似候補は、対象文字と同じ文字数で、3文字以上の対象なら「対象の1文字違い」程度を先に救出します。
 ※ 近似候補の黒塗り範囲は、候補地点全体ではなく採用候補自身のbboxを使います。`,
