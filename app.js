@@ -5,6 +5,7 @@ const ENABLE_DIAGNOSTIC = true;
 
 const fileInput = $("fileInput");
 const targetText = $("targetText");
+const textColorsInput = $("textColors");
 const overlayText = $("overlayText");
 const overlayName = $("overlayName");
 const stampMode = $("stampMode");
@@ -418,6 +419,57 @@ function computeOtsuThreshold(d) {
     return threshold;
 }
 
+function parseHexColor(hex) {
+    const m = String(hex || "").trim().match(/^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/);
+    if (!m) return null;
+    let h = m[1];
+    if (h.length === 3) h = [...h].map(c => c + c).join("");
+    return {
+        r: parseInt(h.slice(0, 2), 16),
+        g: parseInt(h.slice(2, 4), 16),
+        b: parseInt(h.slice(4, 6), 16)
+    };
+}
+
+// カンマ区切りの文字色入力("#1a1a1a, #c7c7c7")を、重複やパース失敗を除いて
+// 解析する。入力が空・全部不正なら空配列を返す(その場合は色抽出パスを使わない)。
+function parseTextColors(input) {
+    const seen = new Set(), out = [];
+    for (const part of String(input || "").split(",")) {
+        const hex = part.trim();
+        if (!hex) continue;
+        const rgb = parseHexColor(hex);
+        if (!rgb) continue;
+        const key = `${rgb.r},${rgb.g},${rgb.b}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ hex, rgb });
+    }
+    return out;
+}
+
+// 指定した色に近い画素だけを黒、それ以外を白にする。
+// 文字が背景より明るいか暗いかに関係なく、常に「黒文字・白背景」という
+// 統一フォーマットで出力されるのが、通常の二値化(明るさ基準)との違い。
+const COLOR_EXTRACT_TOLERANCE = 60; // RGB空間でのユークリッド距離の許容値
+
+function makeColorExtractVariant(baseCanvas, rgb) {
+    const c = document.createElement("canvas");
+    c.width = baseCanvas.width; c.height = baseCanvas.height;
+    const ctx2 = c.getContext("2d");
+    ctx2.drawImage(baseCanvas, 0, 0);
+    const img = ctx2.getImageData(0, 0, c.width, c.height), d = img.data;
+    const tol2 = COLOR_EXTRACT_TOLERANCE * COLOR_EXTRACT_TOLERANCE;
+    for (let i = 0; i < d.length; i += 4) {
+        const dr = d[i] - rgb.r, dg = d[i + 1] - rgb.g, db = d[i + 2] - rgb.b;
+        const dist2 = dr * dr + dg * dg + db * db;
+        const v = dist2 <= tol2 ? 0 : 255;
+        d[i] = d[i + 1] = d[i + 2] = v;
+    }
+    ctx2.putImageData(img, 0, 0);
+    return c;
+}
+
 function makeOcrVariant(baseCanvas, name) {
     if (name === "通常") return baseCanvas;
 
@@ -817,6 +869,23 @@ async function collectOcrResults(worker,target){
     stats.primaryMs=performance.now()-primaryStarted;
   }
 
+  // 文字色が分かっている場合、その色に近い画素だけを抽出した版でも
+  // 常に追加で1回ずつ実行する(色ごとに1パス)。ユーザーが明示的に色を
+  // 指定した時だけ動く＝デフォルトの速度には影響しない。
+  const textColors=parseTextColors(textColorsInput ? textColorsInput.value : "");
+  stats.colorNames=textColors.map(c=>`色抽出:${c.hex}`);
+  for(const {hex,rgb} of textColors){
+    const name=`色抽出:${hex}`;
+    stats.fallbackUsed=true;
+    status("実行中…");
+    const variant=makeColorExtractVariant(oc,rgb);
+    try {
+      results.push(await recognizeVariant(worker,variant,target,name,scale));
+    } finally {
+      if(variant!==oc){variant.width=1;variant.height=1;}
+    }
+  }
+
   // 第2段階：「二値化Otsu」は、第1段階のHIT数に関わらず常に追加で1回実行する。
   // 第1段階で数件ヒットしていても、同じ画像内の別の箇所が取りこぼされる
   // ことがあるため。重複するHITはmergeMatches()で1つにまとめられ、
@@ -1084,6 +1153,19 @@ async function refineNearCandidates(worker, results, ocrCanvas, target, scale) {
       }
     }
 
+    // 指定された文字色でも、この候補地点に絞って試す。
+    if (!ok && sourceCrop) {
+      const textColorsLocal = parseTextColors(textColorsInput ? textColorsInput.value : "");
+      for (const {hex, rgb} of textColorsLocal) {
+        if (ok) break;
+        extraPasses++;
+        const name = `色抽出:${hex}`;
+        const variantCanvas = makeColorExtractVariant(sourceCrop.canvas, rgb);
+        ok = await runLocalCrop({canvas: variantCanvas, x0: sourceCrop.x0, y0: sourceCrop.y0}, name, 7);
+        if (variantCanvas !== sourceCrop.canvas) { variantCanvas.width = 1; variantCanvas.height = 1; }
+      }
+    }
+
     if (ok) {
       refined.push({
         candidate:cand.candidate,
@@ -1274,8 +1356,9 @@ async function diagnoseOCR(){
       `候補地点：${candidateGroups.length} / 近似候補救出：${refine.fastRecovered} / 再OCR実行：${refine.attempted} / 再OCR追加パス：${refine.extraPasses} / 既存HITで省略：${refine.skippedExact}`,
       "",
       `※ 今回は速度実験として、まずグレー＋コントラストだけを全体OCRします。`,
-      `※ 第1段階で1件以上HITした場合、追加の全体OCRは省略します。`,
+      `※ 第1段階で1件以上HITした場合、二値化Otsu・180・220・反転の追加OCRは省略します。`,
       `※ 第1段階でHITが0件の場合だけ、二値化Otsu・180・220・反転を追加します。`,
+      `※ 文字色の指定がある場合、色抽出パスはHIT数に関わらず常に追加実行します。`,
       `※ 候補地点は同じ位置付近の候補をまとめています。`,
       `※ 近似候補は、対象文字と同じ文字数で、3文字以上の対象なら「対象の1文字違い」程度を先に救出します。
 ※ 近似候補の黒塗り範囲は、候補地点全体ではなく採用候補自身のbboxを使います。`,
