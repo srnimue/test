@@ -46,6 +46,9 @@
   <input type="hidden" id="id">
   <div class="grid">
     <label>取引種別<select id="type"><option>交換</option><option>譲渡</option><option>買取</option><option>代行</option></select></label>
+    <label>受け渡し方法<select id="delivery">
+      <option>郵送</option><option>手渡し</option>
+    </select></label>
     <label>ステータス<select id="status">
       <option>DM確認中</option><option>内容確定</option><option>発送待ち</option><option>発送済み</option><option>到着確認</option><option>完了</option><option>要対応</option>
     </select></label>
@@ -53,11 +56,17 @@
     <label>X ID<input id="xid" maxlength="60" placeholder="@example"></label>
   </div>
   <label>取引内容<textarea id="items" rows="3" placeholder="例：ルシファー 缶バッジA ↔ 缶バッジB"></textarea></label>
-  <div class="grid">
+  <div class="grid delivery-fields" id="postalFields">
     <label>自分の発送日<input id="myShip" type="date"></label>
     <label>相手の発送日<input id="theirShip" type="date"></label>
     <label>発送方法<input id="shipping" maxlength="80" placeholder="普通郵便 / ゆうパケット等"></label>
     <label>追跡番号<input id="tracking" maxlength="100" placeholder="必要な場合のみ"></label>
+  </div>
+  <div class="grid delivery-fields hidden" id="meetFields">
+    <label>手渡し日時<input id="meetAt" type="datetime-local"></label>
+    <label>手渡し場所<input id="meetPlace" maxlength="120" placeholder="例：池袋駅 / イベント会場"></label>
+  </div>
+  <div class="grid">
     <label>商品代<input id="price" inputmode="numeric" placeholder="0"></label>
     <label>送料<input id="postage" inputmode="numeric" placeholder="0"></label>
   </div>

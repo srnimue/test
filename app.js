@@ -1,7 +1,7 @@
 const KEY="torihiki-note-v01";
 let data=JSON.parse(localStorage.getItem(KEY)||"[]");
 const $=id=>document.getElementById(id);
-const fields=["id","type","status","partnerName","xid","items","myShip","theirShip","shipping","tracking","price","postage","addressExchanged","paid","memo"];
+const fields=["id","type","delivery","status","partnerName","xid","items","myShip","theirShip","shipping","tracking","meetAt","meetPlace","price","postage","addressExchanged","paid","memo"];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function persist(){localStorage.setItem(KEY,JSON.stringify(data));render()}
 function render(){
@@ -13,8 +13,16 @@ function render(){
   return !q||[x.partnerName,x.xid,x.items,x.memo,x.type,x.status].join(" ").toLowerCase().includes(q)
  }).sort((a,b)=>(b.updated||"").localeCompare(a.updated||""));
  $("empty").classList.toggle("hidden",rows.length>0);
- $("cards").innerHTML=rows.map(x=>`<article class="card" data-id="${esc(x.id)}"><div class="card-top"><span class="badge">${esc(x.type)}</span><span class="badge ${x.status==="要対応"?"attn":x.status==="完了"?"done":""}">${esc(x.status)}</span></div><h3>${esc(x.partnerName||x.xid||"相手未入力")}</h3><p>${esc(x.items||"取引内容未入力")}</p><div class="meta">${x.xid?`<span>${esc(x.xid)}</span>`:""}${x.myShip?`<span>自分発送 ${esc(x.myShip)}</span>`:""}${x.theirShip?`<span>相手発送 ${esc(x.theirShip)}</span>`:""}<span>更新 ${esc((x.updated||"").slice(0,10))}</span></div></article>`).join("");
- document.querySelectorAll(".card").forEach(el=>el.onclick=()=>openEdit(el.dataset.id));
+ const statuses=["DM確認中","内容確定","発送待ち","発送済み","到着確認","完了","要対応"];
+ $("cards").innerHTML=rows.map(x=>{
+   const delivery=x.delivery||"郵送";
+   const detail=delivery==="手渡し"
+     ? `${x.meetAt?`<span>日時 ${esc(x.meetAt.replace("T"," "))}</span>`:""}${x.meetPlace?`<span>場所 ${esc(x.meetPlace)}</span>`:""}`
+     : `${x.myShip?`<span>自分発送 ${esc(x.myShip)}</span>`:""}${x.theirShip?`<span>相手発送 ${esc(x.theirShip)}</span>`:""}${x.shipping?`<span>${esc(x.shipping)}</span>`:""}`;
+   return `<article class="card" data-id="${esc(x.id)}"><div class="card-top"><div><span class="badge">${esc(x.type)}</span> <span class="badge">${delivery==="手渡し"?"🤝 手渡し":"📮 郵送"}</span></div><select class="quick-status ${x.status==="要対応"?"attn":x.status==="完了"?"done":""}" data-status-id="${esc(x.id)}">${statuses.map(s=>`<option ${s===x.status?"selected":""}>${s}</option>`).join("")}</select></div><h3>${esc(x.partnerName||x.xid||"相手未入力")}</h3><p>${esc(x.items||"取引内容未入力")}</p><div class="meta">${x.xid?`<span>${esc(x.xid)}</span>`:""}${detail}<span>更新 ${esc((x.updated||"").slice(0,10))}</span></div></article>`
+ }).join("");
+ document.querySelectorAll(".card").forEach(el=>el.onclick=e=>{if(!e.target.closest(".quick-status"))openEdit(el.dataset.id)});
+ document.querySelectorAll(".quick-status").forEach(sel=>sel.onchange=e=>{e.stopPropagation();const x=data.find(v=>v.id===sel.dataset.statusId);if(x){x.status=sel.value;x.updated=new Date().toISOString();persist()}});
 }
 function openNew(){
  $("form").reset();$("id").value="";$("dialogTitle").textContent="新しい取引";$("deleteBtn").classList.add("hidden");$("editor").showModal()
@@ -22,9 +30,15 @@ function openNew(){
 function openEdit(id){
  const x=data.find(v=>v.id===id);if(!x)return;
  $("form").reset();fields.forEach(k=>{if(!$(k))return;if($(k).type==="checkbox")$(k).checked=!!x[k];else $(k).value=x[k]??""});
- $("dialogTitle").textContent="取引を編集";$("deleteBtn").classList.remove("hidden");$("editor").showModal()
+ $("dialogTitle").textContent="取引を編集";$("deleteBtn").classList.remove("hidden");toggleDelivery();$("editor").showModal()
 }
-$("newBtn").onclick=openNew;
+function toggleDelivery(){
+ const hand=$("delivery").value==="手渡し";
+ $("postalFields").classList.toggle("hidden",hand);
+ $("meetFields").classList.toggle("hidden",!hand);
+}
+$("delivery").onchange=toggleDelivery;
+$("newBtn").onclick=()=>{openNew();toggleDelivery()};
 $("saveBtn").onclick=()=>{
  const obj={};fields.forEach(k=>{if(!$(k))return;obj[k]=$(k).type==="checkbox"?$(k).checked:$(k).value.trim()});
  obj.id=obj.id||crypto.randomUUID();obj.updated=new Date().toISOString();
