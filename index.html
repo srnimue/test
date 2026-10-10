@@ -1,79 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zetaスクショ黒塗りツール V41 OCR黒塗りbbox補正</title>
-<link rel="stylesheet" href="style.css?v=62">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f4ef">
+  <title>お取引ノート</title>
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <link rel="icon" href="./favicon.ico">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<main class="container">
-<h1>Zetaスクショ黒塗りツール</h1>
-<p class="description">OCRで名前を自動で黒塗りしたあと、手動で追加の黒塗りができます。</p>
+<header class="topbar">
+  <div>
+    <h1>お取引ノート</h1>
+    <p>交換・譲渡・買取・代行を、ひとまとめに。</p>
+  </div>
+  <button class="primary" id="newBtn">＋ 新しい取引</button>
+</header>
 
-<section class="panel">
-<label for="fileInput">スクリーンショット</label>
-<input id="fileInput" type="file" accept="image/*">
-
-<label for="targetText">黒塗りする文字</label>
-<input id="targetText" type="text" placeholder="例：ゆーざー" autocomplete="off">
-
-<label for="textColors">文字色（任意・分かる場合のみ、カンマ区切りで複数可）</label>
-<input id="textColors" type="text" placeholder="例：#1a1a1a, #c7c7c7" autocomplete="off">
-
-<label for="overlayText">置き換え文字</label>
-<input id="overlayText" type="text" value="{{user}}" autocomplete="off">
-
-<label class="checkbox">
-<input id="overlayName" type="checkbox">
-黒塗り部分に置き換え文字を表示
-</label>
-
-<label class="checkbox">
-<input id="stampMode" type="checkbox" disabled>
-スタンプモード（直前の手動黒塗りと同じサイズ）
-</label>
-
-<div class="button-row">
-<button id="redactBtn" type="button" disabled>OCRして黒塗り</button>
-<button id="diagnoseBtn" type="button" disabled>OCR診断</button>
-<button id="manualBtn" type="button" disabled>手動黒塗り</button>
-<button id="undoBtn" type="button" disabled>直前の黒塗りを取り消す</button>
-</div>
-
-<div class="button-row-right">
-<button id="resetBtn" class="secondary" type="button" disabled>黒塗りリセット</button>
-</div>
-
-<p class="manual-help" id="manualHelp" hidden>
-手動黒塗り中：画像の上を指やマウスでドラッグして、隠したい範囲を選択してください。何個でも追加できます。
-</p>
-<button id="manualDoneBtn" class="secondary" type="button" hidden>手動黒塗り終了</button>
-</section>
-
-<pre id="status" class="status">画像を選択してください。</pre>
-
-<section class="canvas-panel">
-<div id="canvasWrap">
-<canvas id="canvas"></canvas>
-<div id="selection" hidden></div>
-<div id="ocrDebugLayer" hidden></div>
-</div>
-<div class="zoom-controls">
-<button id="zoomOutBtn" type="button">－</button>
-<span id="zoomLabel">100%</span>
-<button id="zoomInBtn" type="button">＋</button>
-</div>
-</section>
-
-<section class="actions">
-<button id="saveBtn" type="button" disabled>画像を保存</button>
-</section>
-
-<pre id="errorDetails" class="error" hidden></pre>
-<pre id="ocrDiagnostics" class="diagnostics" hidden></pre>
+<main>
+  <section class="summary" id="summary"></section>
+  <section class="toolbar">
+    <input id="search" type="search" placeholder="相手・内容・メモを検索">
+    <select id="filter">
+      <option value="active">進行中</option>
+      <option value="all">すべて</option>
+      <option value="done">完了</option>
+      <option value="attention">要対応</option>
+    </select>
+  </section>
+  <section id="empty" class="empty hidden">
+    <strong>まだ取引がありません</strong>
+    <span>「新しい取引」から最初の1件を登録できます。</span>
+  </section>
+  <section id="cards" class="cards"></section>
 </main>
-<script src="app.js?v=62"></script>
+
+<dialog id="editor">
+<form method="dialog" id="form">
+  <div class="dialog-head">
+    <h2 id="dialogTitle">新しい取引</h2>
+    <button value="cancel" class="iconbtn" aria-label="閉じる">×</button>
+  </div>
+  <input type="hidden" id="id">
+  <div class="grid">
+    <label>取引種別<select id="type"><option>交換</option><option>譲渡</option><option>買取</option><option>代行</option></select></label>
+    <label>ステータス<select id="status">
+      <option>DM確認中</option><option>内容確定</option><option>発送待ち</option><option>発送済み</option><option>到着確認</option><option>完了</option><option>要対応</option>
+    </select></label>
+    <label>相手の表示名<input id="partnerName" maxlength="60" placeholder="任意"></label>
+    <label>X ID<input id="xid" maxlength="60" placeholder="@example"></label>
+  </div>
+  <label>取引内容<textarea id="items" rows="3" placeholder="例：ルシファー 缶バッジA ↔ 缶バッジB"></textarea></label>
+  <div class="grid">
+    <label>自分の発送日<input id="myShip" type="date"></label>
+    <label>相手の発送日<input id="theirShip" type="date"></label>
+    <label>発送方法<input id="shipping" maxlength="80" placeholder="普通郵便 / ゆうパケット等"></label>
+    <label>追跡番号<input id="tracking" maxlength="100" placeholder="必要な場合のみ"></label>
+    <label>商品代<input id="price" inputmode="numeric" placeholder="0"></label>
+    <label>送料<input id="postage" inputmode="numeric" placeholder="0"></label>
+  </div>
+  <div class="checks">
+    <label><input id="addressExchanged" type="checkbox"> 住所交換済み</label>
+    <label><input id="paid" type="checkbox"> 支払い済み</label>
+  </div>
+  <label>メモ<textarea id="memo" rows="4" placeholder="梱包方法、約束したことなど。住所・本名などの個人情報は保存しない想定です。"></textarea></label>
+  <div class="dialog-actions">
+    <button type="button" class="danger hidden" id="deleteBtn">削除</button>
+    <span></span>
+    <button value="cancel">キャンセル</button>
+    <button type="button" class="primary" id="saveBtn">保存</button>
+  </div>
+</form>
+</dialog>
+
+<footer>
+  <span>データはこのブラウザ内に保存されます。</span>
+  <div><button id="exportBtn">書き出し</button><label class="filebtn">読み込み<input id="importFile" type="file" accept=".json,application/json"></label></div>
+</footer>
+<script src="./app.js"></script>
 </body>
 </html>
