@@ -4,25 +4,47 @@
 footer button,footer .file{height:38px;min-height:38px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;line-height:1;border:1px solid #ddd6cd}
 @media(max-width:600px){dialog input,dialog select,dialog textarea{font-size:16px}.actions{display:flex}.action-gap{width:18px}}
 
-/* v0.5: iPhone modal layout */
-#dlg{padding:0;max-height:min(88dvh,820px);overflow:hidden}
-#dlg form{height:100%;max-height:min(88dvh,820px);display:flex;flex-direction:column}
-#dlg .dialog-head{flex:0 0 auto;padding:16px 18px 13px;background:#fff;border-bottom:1px solid #eee9e2;position:relative;z-index:2}
-#dlg .dialog-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 18px 18px;overscroll-behavior:contain}
-#dlg .closebtn{min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center}
-#dlg input:not([type="checkbox"]):not([type="hidden"]),#dlg select{height:44px;min-height:44px;padding-top:0;padding-bottom:0}
-#dlg input[type="date"],#dlg input[type="datetime-local"]{height:44px;min-height:44px;line-height:44px;-webkit-appearance:none;appearance:none}
-#dlg textarea{min-height:88px}
-.actions{display:flex;align-items:center;width:100%;gap:8px;padding-top:4px}
-.actions #save{flex:0 0 auto}
-.actions .action-gap{flex:1 1 auto;min-width:32px}
-.secondary-actions{display:flex;gap:8px;align-items:center}
-.actions #arc,.actions #del{white-space:nowrap}
+/* v0.5.2: safe iPhone refinements, based on working v0.4 */
+#dlg{
+  max-height:88dvh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+#dlg .dialog-head{
+  position:sticky;
+  top:-18px;
+  z-index:10;
+  background:#fff;
+  padding-top:18px;
+  padding-bottom:12px;
+  border-bottom:1px solid #eee9e2;
+}
+#dlg input:not([type="checkbox"]):not([type="hidden"]),
+#dlg select{
+  height:44px;
+  min-height:44px;
+  box-sizing:border-box;
+}
+#dlg input[type="date"],
+#dlg input[type="datetime-local"]{
+  height:44px;
+  min-height:44px;
+  line-height:normal;
+}
+.actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.actions .action-gap{
+  flex:1 1 auto;
+  min-width:36px;
+}
+.actions #save,.actions #arc,.actions #del{flex:0 0 auto;white-space:nowrap}
 @media(max-width:600px){
-  #dlg{width:calc(100% - 28px);max-height:88dvh}
-  #dlg form{max-height:88dvh}
-  #dlg .dialog-head{padding:14px 16px 12px}
-  #dlg .dialog-body{padding:0 16px 16px}
-  .actions .action-gap{min-width:28px}
-  .secondary-actions{gap:6px}
+  #dlg{max-height:88dvh}
+  #dlg input,#dlg select,#dlg textarea{font-size:16px}
+  .actions{display:flex}
+  .actions .action-gap{min-width:24px}
 }
