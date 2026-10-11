@@ -1,9 +1,7 @@
-お取引ノート v0.6.1
-・iPhone Safariで日付/日時入力欄だけ横幅がはみ出す問題への対策を追加
-  - grid-template-columns: repeat(2, minmax(0, 1fr))
-  - date / datetime-local に min-width: 0
-  - width / max-width: 100%
-  - -webkit-min-logical-width: 0
-  - paddingを0 12pxに統一
-・スマホ時は従来どおり1カラム表示
-・v0.6の機能と動作はそのまま維持
+お取引ノート v0.6.2
+・iPhone Safariの日付/日時入力欄の横幅対策をラッパー方式に変更
+・自分の発送日 / 相手の発送日 / 手渡し日時を .date-wrap で包む
+・枠・角丸・左右paddingはラッパー側へ移動
+・date / datetime-local 本体は padding:0 / border:0 / width:100% にしてWebKitの幅計算バグを回避
+・appearance:none は使用していないため、日付選択UIは維持
+・v0.6.1までの機能は維持
