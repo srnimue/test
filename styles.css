@@ -48,3 +48,63 @@ footer button,footer .file{height:38px;min-height:38px;padding:0 12px;display:in
   .actions{display:flex}
   .actions .action-gap{min-width:24px}
 }
+
+/* v0.6 layout overrides */
+footer{
+  position:static !important;
+  max-width:900px;
+  margin:18px auto 0;
+  padding:12px 20px 24px;
+  border-top:1px solid #ddd6cd;
+  background:transparent;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+footer span{margin-right:auto}
+footer button,footer .file{
+  box-sizing:border-box !important;
+  height:40px !important;
+  min-height:40px !important;
+  padding:0 14px !important;
+  margin:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  line-height:1 !important;
+  vertical-align:middle;
+}
+main{padding-bottom:16px !important}
+.actions{
+  display:flex !important;
+  align-items:center !important;
+  width:100%;
+  gap:0 !important;
+}
+.actions #save{margin:0 !important}
+.actions .action-gap{display:block !important;flex:1 1 auto !important;min-width:42px !important}
+.danger-actions{display:flex;align-items:center;gap:8px}
+.danger-actions #arc,.danger-actions #del{margin:0 !important;white-space:nowrap}
+#dlg input[type="date"],#dlg input[type="datetime-local"]{
+  height:44px !important;
+  min-height:44px !important;
+  max-height:44px !important;
+  padding:0 11px !important;
+  font-size:16px !important;
+  font-weight:400 !important;
+  line-height:normal !important;
+  border-radius:10px !important;
+  box-sizing:border-box !important;
+}
+#dlg input[type="date"]::-webkit-date-and-time-value,
+#dlg input[type="datetime-local"]::-webkit-date-and-time-value{
+  text-align:left;
+  min-height:0;
+  margin:0;
+}
+@media(max-width:600px){
+ footer{display:flex !important}
+ footer span{display:none !important}
+ .actions .action-gap{min-width:32px !important}
+ .danger-actions{gap:7px}
+}
