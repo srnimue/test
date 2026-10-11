@@ -1,8 +1,9 @@
-お取引ノート v0.6
-・一覧の並び順を登録順で固定。ステータス変更だけではカードが移動しません。
-・保存を左、Archive/削除を右側グループに分離。
-・iPhone Safariの日付/日時入力の高さ・文字ウェイトを再調整。
-・書き出し/読み込みを固定フッターから通常のページ下部へ移動。
-・書き出し/読み込みの高さを40pxに統一。
-・favicon.png / favicon.ico / apple-touch-icon.png のhead設定を維持。
-・登録/編集ロジックはv0.5.2をベースに維持。
+お取引ノート v0.6.1
+・iPhone Safariで日付/日時入力欄だけ横幅がはみ出す問題への対策を追加
+  - grid-template-columns: repeat(2, minmax(0, 1fr))
+  - date / datetime-local に min-width: 0
+  - width / max-width: 100%
+  - -webkit-min-logical-width: 0
+  - paddingを0 12pxに統一
+・スマホ時は従来どおり1カラム表示
+・v0.6の機能と動作はそのまま維持
