@@ -168,3 +168,25 @@ main{padding-bottom:16px !important}
 #dlg label .date-wrap input{
   margin-top:0 !important;
 }
+
+/* v0.6.3: vertically center iOS date text */
+#dlg .date-wrap{
+  display:flex !important;
+  align-items:center !important;
+}
+#dlg .date-wrap input[type="date"],
+#dlg .date-wrap input[type="datetime-local"]{
+  height:42px !important;
+  min-height:42px !important;
+  max-height:42px !important;
+  line-height:42px !important;
+  vertical-align:middle !important;
+}
+#dlg .date-wrap input[type="date"]::-webkit-date-and-time-value,
+#dlg .date-wrap input[type="datetime-local"]::-webkit-date-and-time-value{
+  margin:0 !important;
+  padding:0 !important;
+  min-height:0 !important;
+  line-height:42px !important;
+  text-align:left;
+}
