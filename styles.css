@@ -190,3 +190,14 @@ main{padding-bottom:16px !important}
   line-height:42px !important;
   text-align:left;
 }
+
+/* v0.7 */
+.summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#reorderBtn{flex:0 0 auto;padding:6px 11px;font-size:13px}
+.card{position:relative}
+.drag-handle{display:none;flex:0 0 auto;min-width:42px;min-height:42px;align-items:center;justify-content:center;font-size:24px;line-height:1;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;color:#777}
+.reorder-mode .card{cursor:default}
+.reorder-mode .drag-handle{display:inline-flex}
+.reorder-mode .quick{display:none}
+.card.dragging{opacity:.72;box-shadow:0 10px 28px #0002}
+.x-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
