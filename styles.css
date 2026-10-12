@@ -228,3 +228,26 @@ main{padding-bottom:16px !important}
   header .header-actions{display:grid;grid-template-columns:1fr 1fr}
   header .header-actions button{width:100%}
 }
+
+/* v0.9.1: compact help link in title row */
+.title-block{min-width:0}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title-row h1{flex:0 1 auto}
+.help-link{
+  border:0 !important;
+  background:transparent !important;
+  color:#777 !important;
+  padding:2px 0 !important;
+  font-size:12px !important;
+  line-height:1.2;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  white-space:nowrap;
+}
+.help-link:hover{color:#272522 !important}
+@media(max-width:600px){
+  header{display:flex}
+  header .title-block{width:100%}
+  header #new{width:100%}
+  .title-row{width:100%}
+}
