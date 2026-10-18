@@ -105,7 +105,6 @@ function readStoredArray(){
 }
 
 let data=normalizeData(readStoredArray());
-localStorage.setItem(KEY,JSON.stringify(data));
 
 function ss(){return $("delivery").value==="手渡し"?meet:post}
 function xUser(v){
@@ -142,7 +141,11 @@ function toggle(){
 }
 function saveData(){
   localStorage.setItem(KEY,JSON.stringify(data));
-  render();
+  try{render();}catch(err){
+  console.error(err);
+  const cards=$("cards");
+  if(cards) cards.innerHTML='<div class="card">表示処理でエラーが発生しました。データはブラウザ内に残っている可能性があります。</div>';
+}
 }
 function render(){
   const live=data.filter(x=>!x.archived);
@@ -296,12 +299,6 @@ function dateMeta(label,raw,status,kind="generic"){
   }
   return `<span${cls?` class="${cls}"`:""}>${esc(label)} ${esc(raw)}${note?`<span class="date-note">${note}</span>`:""}</span>`;
 }
-function syncMeetTimeUI(){
-  const undecided=$("meetTimeUndecided").checked;
-  $("meetTimeField").classList.toggle("hide",undecided);
-  $("meetTime").disabled=undecided;
-  if(undecided)$("meetTime").value="";
-}
 function fresh(){
   document.querySelector("form").reset();
   $("id").value="";
@@ -312,9 +309,6 @@ function fresh(){
   $("registeredAt").classList.add("hide");
   $("del").classList.add("hide");
   $("arc").classList.add("hide");
-  $("meetTimeUndecided").checked=true;
-  $("meetTime").value="";
-  syncMeetTimeUI();
   toggle();
   $("dlg").showModal();
 }
@@ -330,8 +324,6 @@ function edit(id){
     if($(k).type==="checkbox")$(k).checked=!!v;
     else $(k).value=v??"";
   });
-  $("meetTimeUndecided").checked=!x.meetTime;
-  syncMeetTimeUI();
   toggle();
   if(ss().includes(x.status))$("status").value=x.status;
   $("title").textContent="取引を編集";
@@ -349,16 +341,17 @@ $("closeHelp").onclick=()=>$("helpDlg").close();
 $("new").onclick=fresh;
 $("delivery").onchange=toggle;
 $("type").onchange=toggle;
-$("meetTimeUndecided").onchange=syncMeetTimeUI;
 document.querySelectorAll(".ship-chip").forEach(btn=>{
   btn.onclick=()=>{$("shipping").value=btn.dataset.ship||""};
 });
 
 $("save").onclick=()=>{
-  try{
   const o={};
-  fields.forEach(k=>o[k]=$(k).type==="checkbox"?$(k).checked:$(k).value.trim());
-  if($("meetTimeUndecided").checked)o.meetTime="";
+  fields.forEach(k=>{
+    const el=$(k);
+    if(!el){ o[k]=""; return; }
+    o[k]=el.type==="checkbox"?el.checked:el.value.trim();
+  });
 
   const now=new Date().toISOString();
   const i=data.findIndex(x=>x.id===o.id);
@@ -385,10 +378,6 @@ $("save").onclick=()=>{
   }
   saveData();
   $("dlg").close();
-  }catch(err){
-    console.error(err);
-    alert("保存できませんでした。入力内容を確認して、もう一度お試しください。");
-  }
 };
 
 $("arc").onclick=()=>{
@@ -479,4 +468,10 @@ $("import").onchange=async e=>{
   e.target.value="";
 };
 
-render();
+try{
+  render();
+}catch(err){
+  console.error(err);
+  const cards=$("cards");
+  if(cards)cards.innerHTML='<div class="card">表示処理でエラーが発生しました。データはブラウザ内に残っている可能性があります。</div>';
+}

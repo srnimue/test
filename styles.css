@@ -271,3 +271,6 @@ main{padding-bottom:16px !important}
 .shipping-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
 .ship-chip{padding:5px 8px;border-radius:999px;font-size:12px;line-height:1.2;background:#f7f4ef;border:1px solid #ddd6cd}
 .meta .unset{color:#999}
+
+/* v0.9.8: 手渡し時間は任意のテキスト入力。
+   iOSのtime入力が現在時刻を表示する挙動を避ける。 */
