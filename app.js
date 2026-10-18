@@ -296,6 +296,12 @@ function dateMeta(label,raw,status,kind="generic"){
   }
   return `<span${cls?` class="${cls}"`:""}>${esc(label)} ${esc(raw)}${note?`<span class="date-note">${note}</span>`:""}</span>`;
 }
+function syncMeetTimeUI(){
+  const undecided=$("meetTimeUndecided").checked;
+  $("meetTimeField").classList.toggle("hide",undecided);
+  $("meetTime").disabled=undecided;
+  if(undecided)$("meetTime").value="";
+}
 function fresh(){
   document.querySelector("form").reset();
   $("id").value="";
@@ -306,6 +312,9 @@ function fresh(){
   $("registeredAt").classList.add("hide");
   $("del").classList.add("hide");
   $("arc").classList.add("hide");
+  $("meetTimeUndecided").checked=true;
+  $("meetTime").value="";
+  syncMeetTimeUI();
   toggle();
   $("dlg").showModal();
 }
@@ -321,6 +330,8 @@ function edit(id){
     if($(k).type==="checkbox")$(k).checked=!!v;
     else $(k).value=v??"";
   });
+  $("meetTimeUndecided").checked=!x.meetTime;
+  syncMeetTimeUI();
   toggle();
   if(ss().includes(x.status))$("status").value=x.status;
   $("title").textContent="取引を編集";
@@ -338,13 +349,16 @@ $("closeHelp").onclick=()=>$("helpDlg").close();
 $("new").onclick=fresh;
 $("delivery").onchange=toggle;
 $("type").onchange=toggle;
+$("meetTimeUndecided").onchange=syncMeetTimeUI;
 document.querySelectorAll(".ship-chip").forEach(btn=>{
   btn.onclick=()=>{$("shipping").value=btn.dataset.ship||""};
 });
 
 $("save").onclick=()=>{
+  try{
   const o={};
   fields.forEach(k=>o[k]=$(k).type==="checkbox"?$(k).checked:$(k).value.trim());
+  if($("meetTimeUndecided").checked)o.meetTime="";
 
   const now=new Date().toISOString();
   const i=data.findIndex(x=>x.id===o.id);
@@ -371,6 +385,10 @@ $("save").onclick=()=>{
   }
   saveData();
   $("dlg").close();
+  }catch(err){
+    console.error(err);
+    alert("保存できませんでした。入力内容を確認して、もう一度お試しください。");
+  }
 };
 
 $("arc").onclick=()=>{
