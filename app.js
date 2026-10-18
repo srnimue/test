@@ -7,7 +7,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 
 const post=["DM確認中","内容確定","発送待ち","発送済み","到着確認","完了"];
 const meet=["DM確認中","内容確定","受け渡し待ち","完了"];
-const fields=["id","type","delivery","status","name","xid","items","myShip","theirShip","shipping","tracking","meetAt","meetPlace","price","postage","paid","addressExchanged","memo"];
+const fields=["id","type","delivery","status","name","xid","items","myShip","theirShip","shipping","tracking","meetDate","meetTime","meetPlace","price","postage","paid","addressExchanged","memo"];
 
 let archiveView=false;
 let reorderMode=false;
@@ -61,7 +61,8 @@ function normalizeData(raw){
       theirShip:safeString(x.theirShip,32),
       shipping:safeString(x.shipping,120),
       tracking:safeString(x.tracking,200),
-      meetAt:safeString(x.meetAt,40),
+      meetDate:safeString(x.meetDate || (x.meetAt ? String(x.meetAt).slice(0,10) : ""),32),
+      meetTime:safeString(x.meetTime || (x.meetAt && String(x.meetAt).includes("T") ? String(x.meetAt).split("T")[1].slice(0,5) : ""),16),
       meetPlace:safeString(x.meetPlace,240),
       price:safeString(x.price,40),
       postage:safeString(x.postage,40),
@@ -168,7 +169,7 @@ function render(){
   const f=$("filter").value;
   const base=q?data:data.filter(x=>archiveView?x.archived:!x.archived);
   let rows=base.filter(x=>{
-    const hit=!q||[x.name,x.xid,x.items,x.memo,x.type,x.status,x.meetPlace,x.shipping].join(" ").toLowerCase().includes(q);
+    const hit=!q||[x.name,x.xid,x.items,x.memo,x.type,x.status,x.meetPlace,x.meetDate,x.meetTime,x.shipping].join(" ").toLowerCase().includes(q);
     if(!hit)return false;
     if(q)return true;
     return archiveView||f==="all"||(f==="done"?x.status==="完了":x.status!=="完了");
@@ -179,7 +180,9 @@ function render(){
     const d=x.delivery||"郵送";
     const list=d==="手渡し"?meet:post;
     const details=d==="手渡し"
-      ? `${x.meetAt?dateMeta("日時",x.meetAt,x.status,"meet"):`<span class="unset">日時 未設定</span>`}${x.meetPlace?`<span>場所 ${esc(x.meetPlace)}</span>`:""}`
+      ? `${x.meetDate
+          ? `${dateMeta("手渡し日",x.meetDate,x.status,"meet")}${x.meetTime?`<span>時間 ${esc(x.meetTime)}</span>`:`<span class="unset">時間 未定</span>`}`
+          : `<span class="unset">手渡し日 未設定</span>`}${x.meetPlace?`<span>場所 ${esc(x.meetPlace)}</span>`:""}`
       : `${x.myShip?dateMeta("自分発送",x.myShip,x.status,"myShip"):`<span class="unset">自分発送 未設定</span>`}${x.theirShip?dateMeta("相手発送",x.theirShip,x.status,"theirShip"):`<span class="unset">相手発送 未設定</span>`}`;
 
     const idAttr=esc(x.id);
