@@ -299,6 +299,50 @@ function dateMeta(label,raw,status,kind="generic"){
   }
   return `<span${cls?` class="${cls}"`:""}>${esc(label)} ${esc(raw)}${note?`<span class="date-note">${note}</span>`:""}</span>`;
 }
+
+function normalizeMeetTimeValue(value){
+  const raw=String(value||"").trim();
+  if(!raw)return "";
+
+  let h,m;
+
+  if(/^\d{1,2}:\d{1,2}$/.test(raw)){
+    [h,m]=raw.split(":").map(Number);
+  }else if(/^\d{1,2}$/.test(raw)){
+    h=Number(raw);
+    m=0;
+  }else if(/^\d{3}$/.test(raw)){
+    h=Number(raw.slice(0,1));
+    m=Number(raw.slice(1));
+  }else if(/^\d{4}$/.test(raw)){
+    h=Number(raw.slice(0,2));
+    m=Number(raw.slice(2));
+  }else{
+    return null;
+  }
+
+  if(!Number.isInteger(h)||!Number.isInteger(m)||h<0||h>23||m<0||m>59){
+    return null;
+  }
+
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+function formatMeetTimeInput(){
+  const el=$("meetTime");
+  if(!el)return true;
+
+  const formatted=normalizeMeetTimeValue(el.value);
+  if(formatted===null){
+    alert("手渡し時間は「1400」「930」「14」「14:30」などで入力してください。");
+    el.focus();
+    return false;
+  }
+
+  el.value=formatted;
+  return true;
+}
+
 function fresh(){
   document.querySelector("form").reset();
   $("id").value="";
@@ -341,11 +385,13 @@ $("closeHelp").onclick=()=>$("helpDlg").close();
 $("new").onclick=fresh;
 $("delivery").onchange=toggle;
 $("type").onchange=toggle;
+$("meetTime").addEventListener("blur",formatMeetTimeInput);
 document.querySelectorAll(".ship-chip").forEach(btn=>{
   btn.onclick=()=>{$("shipping").value=btn.dataset.ship||""};
 });
 
 $("save").onclick=()=>{
+  if(!formatMeetTimeInput())return;
   const o={};
   fields.forEach(k=>{
     const el=$(k);
