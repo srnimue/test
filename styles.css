@@ -397,3 +397,11 @@ main{padding-bottom:16px !important}
     align-items:flex-start;
   }
 }
+
+
+/* v0.10.1 preview: long-term display */
+#longModeBtn{flex:0 0 auto;padding:6px 11px;font-size:13px}
+#longModeBtn.active{background:#272522;color:#fff;border-color:#272522}
+.long-check{margin-top:4px}
+.long-badge{border-style:dashed}
+@media(max-width:600px){#longModeBtn{padding:6px 8px;font-size:12px}.summary-actions{flex-wrap:wrap;justify-content:flex-end}}

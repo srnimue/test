@@ -9,7 +9,7 @@
   <link href="./favicon.png" rel="icon" type="image/png"/>
   <link href="./favicon.ico" rel="icon"/>
   <link href="./apple-touch-icon.png" rel="apple-touch-icon"/>
-  <link href="styles.css?v=0100p" rel="stylesheet"/>
+  <link href="styles.css?v=0101p" rel="stylesheet"/>
  </head>
  <body>
   <header>
@@ -38,6 +38,9 @@
      <button id="eventModeBtn" type="button">
       イベント表示
      </button>
+     <button id="longModeBtn" type="button">
+      長期表示
+     </button>
      <button id="reorderBtn" type="button">
       並び替え
      </button>
@@ -45,6 +48,9 @@
    </div>
    <div class="event-hint hide" id="eventHint">
     手渡しの取引だけを簡易表示します。「完了」を受け渡し済みとして扱います。
+   </div>
+   <div class="event-hint hide" id="longHint">
+    「長期」に設定した取引だけを表示します。
    </div>
    <div class="tools">
     <input id="q" placeholder="相手・内容・メモを検索"/>
@@ -259,6 +265,10 @@
      <input id="addressExchanged" type="checkbox"/>
      住所交換済み
     </label>
+    <label class="check long-check">
+     <input id="longTerm" type="checkbox"/>
+     長期のお取引
+    </label>
     <label>
      メモ
      <textarea id="memo" rows="4"></textarea>
@@ -292,7 +302,7 @@
     <input accept=".json" id="import" type="file"/>
    </label>
   </footer>
-  <script src="app.js?v=0100p">
+  <script src="app.js?v=0101p">
   </script>
  </body>
 </html>

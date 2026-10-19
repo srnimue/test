@@ -1,84 +1,464 @@
+<!doctype html>
 <html lang="ja">
-  <head></head>
-<body>
-<h1>お取引ノート👐</h1>
-<p><strong>交換・譲渡・買取を、ひとまとめに。</strong></p>
-<p>X（旧Twitter）などでのグッズやお取引の進行状況を、シンプル＆安全に管理できる無料のWebアプリです。<br>
-面倒な登録やアプリインストールは不要。ブラウザで開いてすぐ使えます。</p>
-<hr>
-<h3>📖 基本的な使い方</h3>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f3ec">
+  <title>お取引ノート｜使い方・ご案内</title>
+  <style>
+    :root {
+      --rn-bg: #f7f3ec;
+      --rn-surface: #fffdf9;
+      --rn-surface-2: #f1ece3;
+      --rn-text: #25241f;
+      --rn-muted: #6f6a60;
+      --rn-line: #ddd5c8;
+      --rn-accent: #2e65c7;
+      --rn-accent-soft: #edf3ff;
+      --rn-dark: #272720;
+      --rn-warn-bg: #fff7df;
+      --rn-warn-line: #e8cf84;
+      --rn-shadow: 0 10px 28px rgba(55, 45, 25, .07);
+      --rn-radius: 18px;
+    }
 
-<img src="img/20261017234622.PNG">
-  <p>① 新しい取引を登録<br>
-新しいお取引データを登録します。</p>
-    <p>② 取引件数<br>
-登録されている取引のうち、「進行中」と「完了」の件数を表示します。</p>
-    <p>③ 並び替え<br>
-登録した取引の表示順を変更できます。<br>並び替えモードでは、各取引の「↑」「↓」ボタンで順番を変更できます。</p>
-    <p>④検索<br>
-相手の名前・X ID・取引内容・メモなどから、登録済みの取引を検索できます。<br>
-Archive内の取引も検索対象です。</p>
-    <p>⑤ 表示の絞り込み<br>
-「進行中」「完了」「すべて」から、一覧に表示する取引を絞り込めます。<br>
-初期表示は「進行中」です。</p>
-    <p>⑥ Archive<br>
-完了後にArchiveへ移した過去の取引を確認できます。</p>
-    
-    <p>⑦ 取引一覧
-登録した取引が一覧で表示されます。<br>
-ステータスは一覧から直接変更できます。カードをタップ／クリックすると詳細画面が開き、登録内容の確認・編集ができます。</p>
-    <p>⑧ データの書き出し・読み込み
-登録データをファイルに書き出してバックアップしたり、書き出したデータを読み込んで復元したりできます。</p>
+    * { box-sizing: border-box; }
 
-<ol><li>
-<p><strong>取引を登録する</strong><br>
-「+ 新しい取引」をタップし、相手の表示名・X ID（@xxx）・取引種別（交換/譲渡/買取）・取引詳細を入力します。</p>
-</li>
+    html { scroll-behavior: smooth; }
 
+    body.rn-page {
+      margin: 0;
+      background: var(--rn-bg);
+      color: var(--rn-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+      line-height: 1.75;
+      -webkit-text-size-adjust: 100%;
+    }
 
-  
-<li>
-<p><strong>進捗に合わせてステータスを切り替える</strong><br>
-「DM確認中」「発送待ち」「完了」などをワンタップで更新！<br>
-進行状況は取引編集だけでなく一覧からも変更可能です。<br>
-住所交換済み（🏠）や支払い済み（💰）のチェックを入れると、一覧カードにも絵文字バッジが表示されて一目で進捗がわかります。</p>
-</li>
+    .rn-shell {
+      width: min(920px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 52px;
+    }
 
+    .rn-hero {
+      padding: 34px 28px 30px;
+      background: var(--rn-surface);
+      border: 1px solid var(--rn-line);
+      border-radius: 24px;
+      box-shadow: var(--rn-shadow);
+      text-align: center;
+    }
 
-  
-<li>
-<p><strong>完了した取引を整理する</strong><br>
-普段は「進行中」の取引だけが表示されるので、今やるべき作業に集中できます。<br>
-完了した取引は「完了表示」や「Archive」へ移動してスッキリ整理！</p>
-</li>
+    .rn-kicker {
+      margin: 0 0 6px;
+      color: var(--rn-muted);
+      font-size: .83rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
 
+    .rn-title {
+      margin: 0;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      line-height: 1.15;
+      letter-spacing: -.03em;
+    }
 
-</ol>
-<hr>
-<h2>💡 4つの安心・便利ポイント</h2>
-<ol>
-<li>
-<p><strong>個人情報は一切不要</strong><br>
-名前や住所などの入力は不要。<br>
-XのアカウントIDと取引内容・進捗だけをスマートに管理します。</p>
-</li>
-<li>
-<p><strong>取引データはブラウザ内に保存</strong><br>
-登録した取引データはお使いのブラウザ内に保存されます。<br>
-お制作者側のサーバーへ送信・保存されることはません
-</p></li>
-<li>
-<p><strong>完全無料・広告なし</strong><br>
-画面を邪魔する広告についてはこれからも導入の予定はありません。</p>
-</li>
-<li>
-<p><strong>バックアップ・データ移行対応</strong><br>
-「データの書き出し（JSON）」と「読み込み」に対応。<br>
-機種変更や万が一ブラウザ内の保存データが消えた時もも安心です。</p>
-</li></ol>
-<h3>⚠️ ご利用上の注意</h3>
-<ul>
-<li>ブラウザのサイトデータを削除した場合保存データも消えてしまうため、定期的な「データの書き出し（バックアップ）」をおすすめします。</li>
-<li>iOS (Safari) / PC(Chrome) で動作確認済み</li>
-</ul>
-</body></html>
+    .rn-lead {
+      max-width: 620px;
+      margin: 14px auto 0;
+      color: var(--rn-muted);
+      font-size: 1rem;
+    }
+
+    .rn-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .rn-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 20px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 800;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    .rn-button:hover { transform: translateY(-1px); }
+
+    .rn-button--primary {
+      background: var(--rn-dark);
+      color: #fff;
+    }
+
+    .rn-button--sub {
+      background: var(--rn-accent-soft);
+      color: var(--rn-accent);
+      border: 1px solid #d7e4ff;
+    }
+
+    .rn-section {
+      margin-top: 28px;
+    }
+
+    .rn-section-title {
+      margin: 0 0 12px;
+      font-size: 1.28rem;
+      line-height: 1.35;
+    }
+
+    .rn-section-note {
+      margin: -4px 0 14px;
+      color: var(--rn-muted);
+      font-size: .92rem;
+    }
+
+    .rn-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .rn-feature {
+      padding: 18px;
+      background: var(--rn-surface);
+      border: 1px solid var(--rn-line);
+      border-radius: var(--rn-radius);
+    }
+
+    .rn-feature-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+      font-weight: 800;
+    }
+
+    .rn-icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
+      border-radius: 11px;
+      background: var(--rn-surface-2);
+      font-size: 1.05rem;
+    }
+
+    .rn-feature p {
+      margin: 0;
+      color: var(--rn-muted);
+      font-size: .92rem;
+    }
+
+    .rn-accordion {
+      display: grid;
+      gap: 10px;
+    }
+
+    .rn-details {
+      overflow: hidden;
+      background: var(--rn-surface);
+      border: 1px solid var(--rn-line);
+      border-radius: 15px;
+    }
+
+    .rn-details summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 58px;
+      padding: 14px 18px;
+      list-style: none;
+      cursor: pointer;
+      font-weight: 800;
+      user-select: none;
+    }
+
+    .rn-details summary::-webkit-details-marker { display: none; }
+
+    .rn-details summary::after {
+      content: "＋";
+      margin-left: auto;
+      color: var(--rn-muted);
+      font-size: 1.25rem;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .rn-details[open] summary::after { content: "−"; }
+
+    .rn-details[open] summary {
+      border-bottom: 1px solid var(--rn-line);
+    }
+
+    .rn-step {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--rn-dark);
+      color: #fff;
+      font-size: .84rem;
+    }
+
+    .rn-details-body {
+      padding: 16px 18px 18px;
+      color: var(--rn-muted);
+      font-size: .94rem;
+    }
+
+    .rn-details-body p { margin: 0; }
+    .rn-details-body p + p { margin-top: 10px; }
+
+    .rn-screenshot-wrap {
+      margin: 12px 0 0;
+      padding: 12px;
+      background: var(--rn-surface-2);
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .rn-screenshot {
+      display: block;
+      width: min(100%, 460px);
+      height: auto;
+      margin: 0 auto;
+      border-radius: 12px;
+      box-shadow: 0 5px 18px rgba(55, 45, 25, .10);
+    }
+
+    .rn-number-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      margin-top: 14px;
+    }
+
+    .rn-number-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 7px;
+      align-items: start;
+    }
+
+    .rn-number-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      margin-top: 1px;
+      border-radius: 50%;
+      background: var(--rn-accent-soft);
+      color: var(--rn-accent);
+      font-size: .78rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .rn-number-item strong {
+      display: block;
+      color: var(--rn-text);
+      font-size: .91rem;
+    }
+
+    .rn-number-item > div > span {
+      display: block;
+      margin-top: 1px;
+      font-size: .84rem;
+      line-height: 1.55;
+    }
+
+    .rn-warning {
+      padding: 18px;
+      background: var(--rn-warn-bg);
+      border: 1px solid var(--rn-warn-line);
+      border-radius: var(--rn-radius);
+    }
+
+    .rn-warning-title {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .rn-warning p {
+      margin: 0;
+      font-size: .92rem;
+      color: #655628;
+    }
+
+    .rn-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .rn-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(150,123,56,.22);
+      color: #655628;
+      font-size: .8rem;
+      font-weight: 700;
+    }
+
+    .rn-footer {
+      margin-top: 28px;
+      color: var(--rn-muted);
+      text-align: center;
+      font-size: .8rem;
+    }
+
+    @media (max-width: 640px) {
+      .rn-shell {
+        width: min(100% - 20px, 920px);
+        padding-top: 14px;
+      }
+
+      .rn-hero {
+        padding: 26px 18px 24px;
+        border-radius: 20px;
+      }
+
+      .rn-feature-grid,
+      .rn-number-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .rn-feature { padding: 15px; }
+      .rn-details summary { padding: 13px 15px; }
+      .rn-details-body { padding: 14px 15px 16px; }
+
+      .rn-button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .rn-button { transition: none; }
+    }
+  </style>
+</head>
+<body class="rn-page">
+  <main class="rn-shell">
+    <header class="rn-hero">
+      <p class="rn-kicker">GOODS TRADE NOTE</p>
+      <h1 class="rn-title">お取引ノート👐</h1>
+      <p class="rn-lead">交換・譲渡・買取を、ひとまとめに。X（旧Twitter）などでのお取引状況を、ブラウザで手軽に管理できる無料のWebアプリです。</p>
+      <div class="rn-actions">
+        <a class="rn-button rn-button--primary" href="./index.html">お取引ノートを使う</a>
+        <a class="rn-button rn-button--sub" href="#rn-guide">使い方を見る</a>
+      </div>
+    </header>
+
+    <section class="rn-section" aria-labelledby="rn-features-title">
+      <h2 class="rn-section-title" id="rn-features-title">こんなアプリです</h2>
+      <div class="rn-feature-grid">
+        <article class="rn-feature">
+          <div class="rn-feature-head"><span class="rn-icon" aria-hidden="true">🔒</span><span>ブラウザ内に保存</span></div>
+          <p>登録した取引データは端末のブラウザ内に保存されます。制作者側のサーバーへ送信・保存されません。</p>
+        </article>
+        <article class="rn-feature">
+          <div class="rn-feature-head"><span class="rn-icon" aria-hidden="true">💰</span><span>完全無料・広告なし</span></div>
+          <p>利用料金はかかりません。画面を邪魔する広告も導入予定はありません。</p>
+        </article>
+        <article class="rn-feature">
+          <div class="rn-feature-head"><span class="rn-icon" aria-hidden="true">📦</span><span>進捗をひと目で管理</span></div>
+          <p>取引状況や発送・支払いの進捗を一覧で確認。完了した取引はArchiveへ整理できます。</p>
+        </article>
+        <article class="rn-feature">
+          <div class="rn-feature-head"><span class="rn-icon" aria-hidden="true">💾</span><span>バックアップ対応</span></div>
+          <p>データの書き出し・読み込みに対応。機種変更時の移行や万が一の備えに使えます。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="rn-section" id="rn-guide" aria-labelledby="rn-guide-title">
+      <h2 class="rn-section-title" id="rn-guide-title">使い方</h2>
+      <p class="rn-section-note">必要なところだけ開いて確認できます。</p>
+
+      <div class="rn-accordion">
+        <details class="rn-details" open>
+          <summary><span class="rn-step">1</span><span>画面の見方</span></summary>
+          <div class="rn-details-body">
+            <p>ホーム画面には、登録・検索・絞り込み・Archive・バックアップなど、お取引管理に必要な機能をまとめています。</p>
+            <div class="rn-screenshot-wrap">
+              <img class="rn-screenshot" src="./img/20261017234622.PNG" alt="お取引ノートのホーム画面。各機能に1から8の番号が付いています。">
+            </div>
+            <div class="rn-number-grid">
+              <div class="rn-number-item"><span class="rn-number-badge">1</span><div><strong>新しい取引</strong><span>新しいお取引データを登録します。</span></div></div>
+              <div class="rn-number-item"><span class="rn-number-badge">2</span><div><strong>取引件数</strong><span>「進行中」と「完了」の件数を表示します。</span></div></div>
+              <div class="rn-number-item"><span class="rn-number-badge">3</span><div><strong>並び替え</strong><span>↑ ↓ ボタンで取引カードの表示順を変更できます。</span></div></div>
+              <div class="rn-number-item"><span class="rn-number-badge">4</span><div><strong>検索</strong><span>名前・X ID・取引内容・メモなどから検索できます。Archive内も対象です。</span></div></div>
+              <div class="rn-number-item"><span class="rn-number-badge">5</span><div><strong>表示の絞り込み</strong><span>「進行中」「完了」「すべて」を切り替えます。初期表示は進行中です。</span></div></div>
+              <div class="rn-number-item"><span class="rn-number-badge">6</span><div><strong>Archive</strong><span>完了後にArchiveへ移した過去の取引を確認できます。</span></div></div>
+              <div class="rn-number-item"><span class="rn-number-badge">7</span><div><strong>取引一覧</strong><span>一覧からステータス変更、カードから詳細確認・編集ができます。</span></div></div>
+              <div class="rn-number-item"><span class="rn-number-badge">8</span><div><strong>書き出し・読み込み</strong><span>登録データをファイルへ書き出し、バックアップ・復元できます。</span></div></div>
+            </div>
+          </div>
+        </details>
+
+        <details class="rn-details">
+          <summary><span class="rn-step">2</span><span>取引を登録する</span></summary>
+          <div class="rn-details-body">
+            <p>「＋ 新しい取引」をタップし、相手の表示名・X ID（@xxx）・取引種別（交換／譲渡／買取）・取引詳細などを入力します。</p>
+          </div>
+        </details>
+
+        <details class="rn-details">
+          <summary><span class="rn-step">3</span><span>進捗を更新する</span></summary>
+          <div class="rn-details-body">
+            <p>「DM確認中」「発送待ち」「完了」など、進行状況に合わせてステータスを変更できます。取引編集画面だけでなく、一覧から直接切り替えることもできます。</p>
+            <p>住所交換済み🏠・支払い済み💰にチェックを入れると、一覧カードにも絵文字バッジが表示されます。</p>
+          </div>
+        </details>
+
+        <details class="rn-details">
+          <summary><span class="rn-step">4</span><span>完了した取引を整理する</span></summary>
+          <div class="rn-details-body">
+            <p>普段は「進行中」の取引だけを表示して、対応が必要なものに集中できます。完了した取引は「完了」表示やArchiveへ移して整理できます。</p>
+          </div>
+        </details>
+
+        <details class="rn-details">
+          <summary><span class="rn-step">5</span><span>バックアップ・データ移行</span></summary>
+          <div class="rn-details-body">
+            <p>画面下部の「書き出し」から登録データをファイルに保存できます。「読み込み」では、書き出しておいたデータをブラウザへ戻せます。</p>
+            <p>ブラウザのサイトデータを削除する前や、機種変更の前にはバックアップをおすすめします。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="rn-section" aria-labelledby="rn-notice-title">
+      <div class="rn-warning">
+        <h2 class="rn-warning-title" id="rn-notice-title">⚠️ ご利用上の注意</h2>
+        <p>ブラウザのサイトデータを削除すると、お取引ノートの保存データも消えます。大切なデータは定期的に「書き出し」でバックアップしてください。</p>
+        <div class="rn-meta" aria-label="動作確認環境">
+          <span class="rn-chip">iOS / Safari 動作確認済み</span>
+          <span class="rn-chip">PC / Chrome 動作確認済み</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="rn-footer">お取引ノート</footer>
+  </main>
+</body>
+</html>

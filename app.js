@@ -7,11 +7,12 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 
 const post=["DM確認中","内容確定","発送待ち","発送済み","到着確認","完了"];
 const meet=["DM確認中","内容確定","受け渡し待ち","完了"];
-const fields=["id","type","delivery","status","name","xid","items","myShip","theirShip","shipping","tracking","meetDate","meetTime","meetPlace","price","postage","paid","addressExchanged","memo"];
+const fields=["id","type","delivery","status","name","xid","items","myShip","theirShip","shipping","tracking","meetDate","meetTime","meetPlace","price","postage","paid","addressExchanged","longTerm","memo"];
 
 let archiveView=false;
 let reorderMode=false;
 let eventView=false;
+let longView=false;
 
 function safeString(v,max=10000){
   return String(v??"").slice(0,max);
@@ -69,6 +70,7 @@ function normalizeData(raw){
       postage:safeString(x.postage,40),
       paid:!!x.paid,
       addressExchanged:!!x.addressExchanged,
+      longTerm:!!x.longTerm,
       memo:safeString(x.memo,20000),
       archived:!!x.archived,
       createdAt,
@@ -155,21 +157,29 @@ function render(){
   const handLive=live.filter(x=>x.delivery==="手渡し");
   const handOpen=handLive.filter(x=>x.status!=="完了").length;
   const handDone=handLive.filter(x=>x.status==="完了").length;
+  const longLive=live.filter(x=>x.longTerm);
+  const longOpen=longLive.filter(x=>x.status!=="完了").length;
+  const longDone=longLive.filter(x=>x.status==="完了").length;
 
   $("stats").innerHTML=archiveView
     ? `<span class="stat"><b>${data.filter(x=>x.archived).length}</b>Archive</span>`
     : eventView
       ? `<span class="stat"><b>${handOpen}</b>未受け渡し</span><span class="stat"><b>${handDone}</b>済み</span>`
-      : `<span class="stat"><b>${active}</b>進行中</span><span class="stat"><b>${done}</b>完了</span>`;
+      : longView
+        ? `<span class="stat"><b>${longOpen}</b>進行中</span><span class="stat"><b>${longDone}</b>完了</span>`
+        : `<span class="stat"><b>${active}</b>進行中</span><span class="stat"><b>${done}</b>完了</span>`;
 
   $("eventModeBtn").textContent=eventView?"通常表示":"イベント表示";
   $("eventModeBtn").classList.toggle("active",eventView);
   $("eventHint").classList.toggle("hide",!eventView);
+  $("longModeBtn").textContent=longView?"通常表示":"長期表示";
+  $("longModeBtn").classList.toggle("active",longView);
+  $("longHint").classList.toggle("hide",!longView);
 
   $("archives").textContent=archiveView?"← 戻る":"Archive";
-  $("archives").classList.toggle("hide",eventView);
+  $("archives").classList.toggle("hide",eventView||longView);
   $("filter").classList.toggle("hide",archiveView);
-  $("reorderBtn").classList.toggle("hide",archiveView||eventView||!!$("q").value);
+  $("reorderBtn").classList.toggle("hide",archiveView||eventView||longView||!!$("q").value);
 
   // The same filter is reused in event mode, but the labels become event-friendly.
   const filter=$("filter");
@@ -182,13 +192,14 @@ function render(){
   }
 
   const completedCount=data.filter(x=>!x.archived&&x.status==="完了").length;
-  const canBulkArchive=!eventView&&!archiveView&&!$("q").value&&completedCount>0&&["done","all"].includes(filter.value);
+  const canBulkArchive=!eventView&&!longView&&!archiveView&&!$("q").value&&completedCount>0&&["done","all"].includes(filter.value);
   $("bulkArchive").classList.toggle("hide",!canBulkArchive);
   $("bulkArchive").textContent=`完了分をArchive (${completedCount})`;
 
   $("reorderBtn").textContent=reorderMode?"完了":"並び替え";
   document.body.classList.toggle("reorder-mode",reorderMode);
   document.body.classList.toggle("event-mode",eventView);
+  document.body.classList.toggle("long-mode",longView);
 
   const q=$("q").value.toLowerCase();
   const f=filter.value;
@@ -196,6 +207,8 @@ function render(){
   let base;
   if(eventView){
     base=data.filter(x=>!x.archived&&x.delivery==="手渡し");
+  }else if(longView){
+    base=data.filter(x=>!x.archived&&x.longTerm);
   }else{
     base=q?data:data.filter(x=>archiveView?x.archived:!x.archived);
   }
@@ -207,12 +220,15 @@ function render(){
       .includes(q);
 
     if(!hit)return false;
-    if(q&&!eventView)return true;
+    if(q&&!eventView&&!longView)return true;
     if(archiveView)return true;
 
     return f==="all"||(f==="done"?x.status==="完了":x.status!=="完了");
   });
   rows=orderedRows(rows);
+  if(!eventView&&!longView&&!archiveView&&!q){
+    rows.sort((a,b)=>(Number(a.longTerm)-Number(b.longTerm))||(a.order-b.order));
+  }
 
   $("cards").innerHTML=rows.length?rows.map(x=>{
     const d=x.delivery||"郵送";
@@ -254,6 +270,7 @@ function render(){
           <span class="badge">${d==="手渡し"?"🤝 手渡し":"📮 郵送"}</span>
           ${d==="郵送"&&x.addressExchanged?`<span class="status-mini" title="住所交換済">🏠</span>`:""}
           ${x.type!=="交換"&&x.paid?`<span class="status-mini" title="支払い済">💰</span>`:""}
+          ${x.longTerm?`<span class="badge long-badge">長期</span>`:""}
         </div>
         ${x.archived
           ? '<span class="badge">Archive</span>'
@@ -535,6 +552,16 @@ $("bulkArchive").onclick=()=>{
 };
 $("eventModeBtn").onclick=()=>{
   eventView=!eventView;
+  longView=false;
+  archiveView=false;
+  reorderMode=false;
+  $("filter").value="active";
+  render();
+};
+
+$("longModeBtn").onclick=()=>{
+  longView=!longView;
+  eventView=false;
   archiveView=false;
   reorderMode=false;
   $("filter").value="active";
@@ -548,6 +575,7 @@ $("reorderBtn").onclick=()=>{
 };
 $("archives").onclick=()=>{
   eventView=false;
+  longView=false;
   reorderMode=false;
   archiveView=!archiveView;
   render();
