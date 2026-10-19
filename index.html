@@ -9,7 +9,7 @@
   <link href="./favicon.png" rel="icon" type="image/png"/>
   <link href="./favicon.ico" rel="icon"/>
   <link href="./apple-touch-icon.png" rel="apple-touch-icon"/>
-  <link href="styles.css?v=0101p" rel="stylesheet"/>
+  <link href="styles.css?v=0102p" rel="stylesheet"/>
  </head>
  <body>
   <header>
@@ -35,11 +35,11 @@
     <div id="stats">
     </div>
     <div class="summary-actions">
-     <button id="eventModeBtn" type="button">
-      イベント表示
+     <button aria-label="イベント表示" id="eventModeBtn" title="イベント表示" type="button">
+      🎪
      </button>
-     <button id="longModeBtn" type="button">
-      長期表示
+     <button aria-label="長期表示" id="longModeBtn" title="長期表示" type="button">
+      ⏳
      </button>
      <button id="reorderBtn" type="button">
       並び替え
@@ -97,6 +97,13 @@
      </strong>
      <br/>
      「新しい取引」から登録し、進行に合わせて一覧のステータスを変更します。完了した取引はArchiveへ移動できます。必要に応じて並び替えや検索も利用できます。
+    </p>
+    <p>
+     <strong>
+      表示切り替え
+     </strong>
+     <br/>
+     🎪 はイベント表示、⏳ は長期表示です。もう一度押すと通常表示に戻ります。
     </p>
     <p>
      <strong>
@@ -302,7 +309,7 @@
     <input accept=".json" id="import" type="file"/>
    </label>
   </footer>
-  <script src="app.js?v=0101p">
+  <script src="app.js?v=0102p">
   </script>
  </body>
 </html>

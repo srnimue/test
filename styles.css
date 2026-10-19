@@ -405,3 +405,54 @@ main{padding-bottom:16px !important}
 .long-check{margin-top:4px}
 .long-badge{border-style:dashed}
 @media(max-width:600px){#longModeBtn{padding:6px 8px;font-size:12px}.summary-actions{flex-wrap:wrap;justify-content:flex-end}}
+
+
+/* v0.10.2 preview: compact mode buttons */
+#eventModeBtn,
+#longModeBtn{
+  width:36px;
+  min-width:36px;
+  height:34px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:17px;
+  line-height:1;
+  white-space:nowrap;
+}
+
+.event-done-btn{
+  background:#fff;
+  color:#272522;
+  border:1px solid #aaa39b;
+  box-shadow:none;
+}
+
+.event-done-btn:hover,
+.event-done-btn:focus-visible{
+  background:#f4f1ed;
+  border-color:#7c756d;
+}
+
+#eventModeBtn.active,
+#longModeBtn.active{
+  background:#272522;
+  color:#fff;
+  border-color:#272522;
+}
+
+@media(max-width:600px){
+  #eventModeBtn,
+  #longModeBtn{
+    width:34px;
+    min-width:34px;
+    height:32px;
+    padding:0;
+    font-size:16px;
+  }
+
+  .summary-actions{
+    flex-wrap:nowrap;
+  }
+}

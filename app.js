@@ -169,11 +169,15 @@ function render(){
         ? `<span class="stat"><b>${longOpen}</b>進行中</span><span class="stat"><b>${longDone}</b>完了</span>`
         : `<span class="stat"><b>${active}</b>進行中</span><span class="stat"><b>${done}</b>完了</span>`;
 
-  $("eventModeBtn").textContent=eventView?"通常表示":"イベント表示";
+  $("eventModeBtn").textContent="🎪";
   $("eventModeBtn").classList.toggle("active",eventView);
+  $("eventModeBtn").setAttribute("aria-pressed",String(eventView));
+  $("eventModeBtn").title=eventView?"通常表示に戻る":"イベント表示";
   $("eventHint").classList.toggle("hide",!eventView);
-  $("longModeBtn").textContent=longView?"通常表示":"長期表示";
+  $("longModeBtn").textContent="⏳";
   $("longModeBtn").classList.toggle("active",longView);
+  $("longModeBtn").setAttribute("aria-pressed",String(longView));
+  $("longModeBtn").title=longView?"通常表示に戻る":"長期表示";
   $("longHint").classList.toggle("hide",!longView);
 
   $("archives").textContent=archiveView?"← 戻る":"Archive";
@@ -441,7 +445,7 @@ function formatMeetTimeInput(){
 function fresh(){
   document.querySelector("form").reset();
   $("id").value="";
-  $("delivery").value="郵送";
+  $("delivery").value=eventView?"手渡し":"郵送";
   statusOptions(false);
   $("title").textContent="新しい取引";
   $("registeredAt").textContent="";
