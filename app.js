@@ -274,7 +274,7 @@ function render(){
           <span class="badge">${d==="手渡し"?"🤝 手渡し":"📮 郵送"}</span>
           ${d==="郵送"&&x.addressExchanged?`<span class="status-mini" title="住所交換済">🏠</span>`:""}
           ${x.type!=="交換"&&x.paid?`<span class="status-mini" title="支払い済">💰</span>`:""}
-          ${x.longTerm?`<span class="badge long-badge">長期</span>`:""}
+          ${x.longTerm?`<span class="long-icon" title="長期のお取引" aria-label="長期のお取引">⏳</span>`:""}
         </div>
         ${x.archived
           ? '<span class="badge">Archive</span>'

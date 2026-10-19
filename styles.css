@@ -456,3 +456,17 @@ main{padding-bottom:16px !important}
     flex-wrap:nowrap;
   }
 }
+
+
+/* v0.10.3 preview: 一覧の長期表示をコンパクトなアイコン化 */
+.long-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  width:28px;
+  height:28px;
+  font-size:17px;
+  line-height:1;
+  white-space:nowrap;
+}
