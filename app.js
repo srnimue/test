@@ -11,6 +11,7 @@ const fields=["id","type","delivery","status","name","xid","items","myShip","the
 
 let archiveView=false;
 let reorderMode=false;
+let eventView=false;
 
 function safeString(v,max=10000){
   return String(v??"").slice(0,max);
@@ -151,36 +152,94 @@ function render(){
   const live=data.filter(x=>!x.archived);
   const active=live.filter(x=>x.status!=="完了").length;
   const done=live.filter(x=>x.status==="完了").length;
+  const handLive=live.filter(x=>x.delivery==="手渡し");
+  const handOpen=handLive.filter(x=>x.status!=="完了").length;
+  const handDone=handLive.filter(x=>x.status==="完了").length;
 
   $("stats").innerHTML=archiveView
     ? `<span class="stat"><b>${data.filter(x=>x.archived).length}</b>Archive</span>`
-    : `<span class="stat"><b>${active}</b>進行中</span><span class="stat"><b>${done}</b>完了</span>`;
+    : eventView
+      ? `<span class="stat"><b>${handOpen}</b>未受け渡し</span><span class="stat"><b>${handDone}</b>済み</span>`
+      : `<span class="stat"><b>${active}</b>進行中</span><span class="stat"><b>${done}</b>完了</span>`;
+
+  $("eventModeBtn").textContent=eventView?"通常表示":"イベント表示";
+  $("eventModeBtn").classList.toggle("active",eventView);
+  $("eventHint").classList.toggle("hide",!eventView);
 
   $("archives").textContent=archiveView?"← 戻る":"Archive";
+  $("archives").classList.toggle("hide",eventView);
   $("filter").classList.toggle("hide",archiveView);
-  $("reorderBtn").classList.toggle("hide",archiveView||!!$("q").value);
+  $("reorderBtn").classList.toggle("hide",archiveView||eventView||!!$("q").value);
+
+  // The same filter is reused in event mode, but the labels become event-friendly.
+  const filter=$("filter");
+  if(eventView){
+    filter.options[0].textContent="未受け渡し";
+    filter.options[1].textContent="済み";
+  }else{
+    filter.options[0].textContent="進行中";
+    filter.options[1].textContent="完了";
+  }
 
   const completedCount=data.filter(x=>!x.archived&&x.status==="完了").length;
-  const canBulkArchive=!archiveView&&!$("q").value&&completedCount>0&&["done","all"].includes($("filter").value);
+  const canBulkArchive=!eventView&&!archiveView&&!$("q").value&&completedCount>0&&["done","all"].includes(filter.value);
   $("bulkArchive").classList.toggle("hide",!canBulkArchive);
   $("bulkArchive").textContent=`完了分をArchive (${completedCount})`;
 
   $("reorderBtn").textContent=reorderMode?"完了":"並び替え";
   document.body.classList.toggle("reorder-mode",reorderMode);
+  document.body.classList.toggle("event-mode",eventView);
 
   const q=$("q").value.toLowerCase();
-  const f=$("filter").value;
-  const base=q?data:data.filter(x=>archiveView?x.archived:!x.archived);
+  const f=filter.value;
+
+  let base;
+  if(eventView){
+    base=data.filter(x=>!x.archived&&x.delivery==="手渡し");
+  }else{
+    base=q?data:data.filter(x=>archiveView?x.archived:!x.archived);
+  }
+
   let rows=base.filter(x=>{
-    const hit=!q||[x.name,x.xid,x.items,x.memo,x.type,x.status,x.meetPlace,x.meetDate,x.meetTime,x.shipping].join(" ").toLowerCase().includes(q);
+    const hit=!q||[x.name,x.xid,x.items,x.memo,x.type,x.status,x.meetPlace,x.meetDate,x.meetTime,x.shipping]
+      .join(" ")
+      .toLowerCase()
+      .includes(q);
+
     if(!hit)return false;
-    if(q)return true;
-    return archiveView||f==="all"||(f==="done"?x.status==="完了":x.status!=="完了");
+    if(q&&!eventView)return true;
+    if(archiveView)return true;
+
+    return f==="all"||(f==="done"?x.status==="完了":x.status!=="完了");
   });
   rows=orderedRows(rows);
 
   $("cards").innerHTML=rows.length?rows.map(x=>{
     const d=x.delivery||"郵送";
+    const idAttr=esc(x.id);
+
+    if(eventView){
+      const handDetails=[
+        x.meetDate?`<span class="event-date">${esc(x.meetDate)}</span>`:`<span class="unset">日付未設定</span>`,
+        x.meetTime?`<span>${esc(x.meetTime)}</span>`:`<span class="unset">時間未定</span>`,
+        x.meetPlace?`<span>${esc(x.meetPlace)}</span>`:""
+      ].join("");
+
+      return `<article class="card event-card ${x.status==="完了"?"event-card-done":""}" data-id="${idAttr}">
+        <div class="event-main">
+          <div class="event-person">
+            <div class="event-name">${esc(x.name||x.xid||"相手未入力")}</div>
+            ${x.xid?`<div class="event-x">${xLink(x.xid)}</div>`:""}
+          </div>
+          ${x.status==="完了"
+            ? `<span class="event-done-label">✓ 済み</span>`
+            : `<button type="button" class="event-done-btn" data-id="${idAttr}">受け渡し済み</button>`}
+        </div>
+        <div class="event-meta">${handDetails}</div>
+        <p>${esc(x.items||"取引内容未入力")}</p>
+      </article>`;
+    }
+
     const list=d==="手渡し"?meet:post;
     const details=d==="手渡し"
       ? `${x.meetDate
@@ -188,7 +247,6 @@ function render(){
           : `<span class="unset">手渡し日 未設定</span>`}${x.meetPlace?`<span>場所 ${esc(x.meetPlace)}</span>`:""}`
       : `${x.myShip?dateMeta("自分発送",x.myShip,x.status,"myShip"):`<span class="unset">自分発送 未設定</span>`}${x.theirShip?dateMeta("相手発送",x.theirShip,x.status,"theirShip"):`<span class="unset">相手発送 未設定</span>`}`;
 
-    const idAttr=esc(x.id);
     return `<article class="card" data-id="${idAttr}">
       <div class="top">
         <div>
@@ -207,14 +265,21 @@ function render(){
       <p>${esc(x.items||"取引内容未入力")}</p>
       <div class="meta">${x.xid?`<span>${xLink(x.xid)}</span>`:""}${details}</div>
     </article>`;
-  }).join("") : '<div class="card">該当する取引はありません。</div>';
+  }).join("") : `<div class="card">${eventView?"手渡しの取引はありません。":"該当する取引はありません。"}</div>`;
 
   document.querySelectorAll(".card[data-id]").forEach(c=>{
     c.onclick=e=>{
-      if(reorderMode||e.target.closest(".quick")||e.target.closest(".x-link")||e.target.closest(".move-buttons"))return;
+      if(
+        reorderMode||
+        e.target.closest(".quick")||
+        e.target.closest(".x-link")||
+        e.target.closest(".move-buttons")||
+        e.target.closest(".event-done-btn")
+      )return;
       edit(c.dataset.id);
     };
   });
+
   document.querySelectorAll(".quick").forEach(s=>{
     s.onchange=e=>{
       e.stopPropagation();
@@ -225,6 +290,19 @@ function render(){
       saveData();
     };
   });
+
+  document.querySelectorAll(".event-done-btn").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const x=data.find(v=>v.id===btn.dataset.id);
+      if(!x)return;
+      x.status="完了";
+      x.updated=new Date().toISOString();
+      saveData();
+    };
+  });
+
   if(reorderMode)initMoveButtons();
 }
 
@@ -455,12 +533,21 @@ $("bulkArchive").onclick=()=>{
   targets.forEach(x=>{x.archived=true;x.updated=now});
   saveData();
 };
+$("eventModeBtn").onclick=()=>{
+  eventView=!eventView;
+  archiveView=false;
+  reorderMode=false;
+  $("filter").value="active";
+  render();
+};
+
 $("reorderBtn").onclick=()=>{
   reorderMode=!reorderMode;
   if(!reorderMode)saveVisibleOrder();
   render();
 };
 $("archives").onclick=()=>{
+  eventView=false;
   reorderMode=false;
   archiveView=!archiveView;
   render();
