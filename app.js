@@ -21,10 +21,24 @@ function validIso(v){
   const s=safeString(v,64);
   return s && !Number.isNaN(Date.parse(s)) ? s : "";
 }
+function newId(){
+  if(globalThis.crypto?.randomUUID){
+    return crypto.randomUUID();
+  }
+  if(globalThis.crypto?.getRandomValues){
+    const bytes=new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6]=(bytes[6]&0x0f)|0x40;
+    bytes[8]=(bytes[8]&0x3f)|0x80;
+    const hex=[...bytes].map(b=>b.toString(16).padStart(2,"0")).join("");
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+  }
+  return `id_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,12)}`;
+}
 function makeId(raw,used){
   let id=safeString(raw,120).trim();
   if(!/^[A-Za-z0-9_-]{1,120}$/.test(id) || used.has(id)){
-    do{id=crypto.randomUUID()}while(used.has(id));
+    do{id=newId()}while(used.has(id));
   }
   used.add(id);
   return id;
@@ -43,13 +57,14 @@ function normalizeStatus(status,delivery){
 function normalizeData(raw){
   if(!Array.isArray(raw))return [];
   const usedIds=new Set();
-  const now=Date.now();
-
   const normalized=raw.filter(v=>v&&typeof v==="object"&&!Array.isArray(v)).map((x,i)=>{
     const delivery=x.delivery==="手渡し"?"手渡し":"郵送";
-    const createdAt=validIso(x.createdAt)||validIso(x.updated)||new Date(now-i*1000).toISOString();
+    const createdAt=validIso(x.createdAt)||validIso(x.updated)||"";
     const updated=validIso(x.updated)||createdAt;
-    const order=Number.isFinite(Number(x.order))?Number(x.order):null;
+    const rawOrder=x.order;
+    const order=rawOrder===null||rawOrder===undefined||String(rawOrder).trim()===""
+      ? null
+      : (Number.isFinite(Number(rawOrder))?Number(rawOrder):null);
 
     return {
       id:makeId(x.id,usedIds),
@@ -114,7 +129,11 @@ let data=normalizeData(readStoredArray());
 
 function ss(){return $("delivery").value==="手渡し"?meet:post}
 function xUser(v){
-  return String(v??"").trim().replace(/^@+/,"").replace(/^https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\//i,"").split(/[/?#]/)[0];
+  const normalized=String(v??"").normalize("NFKC").trim()
+    .replace(/^@+/,"")
+    .replace(/^(?:https?:\/\/)?(?:www\.|mobile\.)?(?:twitter\.com|x\.com)\//i,"");
+  const first=normalized.split(/[\/?#\s]/)[0];
+  return first.match(/^[A-Za-z0-9_]{1,15}/)?.[0]||"";
 }
 function xLink(v){
   const u=xUser(v);
@@ -146,12 +165,21 @@ function toggle(){
   statusOptions(true);
 }
 function saveData(){
-  localStorage.setItem(KEY,JSON.stringify(data));
-  try{render();}catch(err){
-  console.error(err);
-  const cards=$("cards");
-  if(cards) cards.innerHTML='<div class="card">表示処理でエラーが発生しました。データはブラウザ内に残っている可能性があります。</div>';
-}
+  try{
+    localStorage.setItem(KEY,JSON.stringify(data));
+  }catch(err){
+    console.error(err);
+    alert("保存できませんでした。ブラウザの保存容量などを確認し、必要なら「書き出し」でデータを退避してください。");
+    return false;
+  }
+  try{
+    render();
+  }catch(err){
+    console.error(err);
+    const cards=$("cards");
+    if(cards)cards.innerHTML='<div class="card">表示処理でエラーが発生しました。データはブラウザ内に残っている可能性があります。</div>';
+  }
+  return true;
 }
 function render(){
   const live=data.filter(x=>!x.archived);
@@ -217,7 +245,9 @@ function render(){
   }else if(longView){
     base=data.filter(x=>!x.archived&&x.longTerm);
   }else{
-    base=q?data:data.filter(x=>archiveView?x.archived:!x.archived);
+    base=archiveView
+      ? data.filter(x=>x.archived)
+      : (q?data:data.filter(x=>!x.archived));
   }
 
   let rows=base.filter(x=>{
@@ -341,8 +371,17 @@ function saveVisibleOrder(){
   // Reuse only the slots these visible items already occupied.
   // Hidden items keep their order, so filtering cannot create duplicate order values.
   const slots=items.map(x=>x.order).sort((a,b)=>a-b);
+  const previous=items.map(x=>x.order);
   items.forEach((x,i)=>x.order=slots[i]);
-  localStorage.setItem(KEY,JSON.stringify(data));
+  try{
+    localStorage.setItem(KEY,JSON.stringify(data));
+    return true;
+  }catch(err){
+    items.forEach((x,i)=>x.order=previous[i]);
+    console.error(err);
+    alert("並び順を保存できませんでした。ブラウザの保存容量などを確認してください。");
+    return false;
+  }
 }
 function moveOne(id,dir){
   const rows=[...document.querySelectorAll("#cards .card[data-id]")];
@@ -350,22 +389,27 @@ function moveOne(id,dir){
   const target=current+dir;
   if(current<0||target<0||target>=rows.length)return;
   const card=rows[current],other=rows[target];
+  const item=data.find(x=>x.id===card.dataset.id);
+  const otherItem=data.find(x=>x.id===other.dataset.id);
+  if(item&&otherItem&&!!item.longTerm!==!!otherItem.longTerm)return;
   if(dir<0)other.parentNode.insertBefore(card,other);
   else other.parentNode.insertBefore(other,card);
-  saveVisibleOrder();
-  render();
+  if(saveVisibleOrder())render();
 }
 function initMoveButtons(){
   const cards=[...document.querySelectorAll("#cards .card[data-id]")];
   cards.forEach((card,i)=>{
+    const item=data.find(x=>x.id===card.dataset.id);
+    const prev=i>0?data.find(x=>x.id===cards[i-1].dataset.id):null;
+    const next=i<cards.length-1?data.find(x=>x.id===cards[i+1].dataset.id):null;
     const up=card.querySelector(".move-up");
     const down=card.querySelector(".move-down");
     if(up){
-      up.disabled=i===0;
+      up.disabled=i===0 || !!item?.longTerm!==!!prev?.longTerm;
       up.onclick=e=>{e.preventDefault();e.stopPropagation();moveOne(card.dataset.id,-1)};
     }
     if(down){
-      down.disabled=i===cards.length-1;
+      down.disabled=i===cards.length-1 || !!item?.longTerm!==!!next?.longTerm;
       down.onclick=e=>{e.preventDefault();e.stopPropagation();moveOne(card.dataset.id,1)};
     }
   });
@@ -405,7 +449,7 @@ function dateMeta(label,raw,status,kind="generic"){
 }
 
 function normalizeMeetTimeValue(value){
-  const raw=String(value||"").trim();
+  const raw=String(value||"").normalize("NFKC").trim();
   if(!raw)return "";
 
   let h,m;
@@ -432,18 +476,28 @@ function normalizeMeetTimeValue(value){
   return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
 }
 
-function formatMeetTimeInput(){
+function setMeetTimeError(message=""){
+  const el=$("meetTime");
+  const error=$("meetTimeError");
+  if(error){
+    error.textContent=message;
+    error.classList.toggle("hide",!message);
+  }
+  if(el)el.setAttribute("aria-invalid",message?"true":"false");
+}
+function formatMeetTimeInput(focusOnError=false){
   const el=$("meetTime");
   if(!el)return true;
 
   const formatted=normalizeMeetTimeValue(el.value);
   if(formatted===null){
-    alert("手渡し時間は「1400」「930」「14」「14:30」などで入力してください。");
-    el.focus();
+    setMeetTimeError("「1400」「930」「14」「14:30」などで入力してください。");
+    if(focusOnError)el.focus();
     return false;
   }
 
   el.value=formatted;
+  setMeetTimeError("");
   return true;
 }
 
@@ -463,7 +517,7 @@ function longScheduleText(x){
 }
 
 function fresh(){
-  document.querySelector("form").reset();
+  $("dlg").querySelector("form").reset();
   $("id").value="";
   $("delivery").value=eventView?"手渡し":"郵送";
   statusOptions(false);
@@ -472,6 +526,7 @@ function fresh(){
   $("registeredAt").classList.add("hide");
   $("del").classList.add("hide");
   $("arc").classList.add("hide");
+  setMeetTimeError("");
   syncLongScheduleUI();
   toggle();
   $("dlg").showModal();
@@ -479,7 +534,7 @@ function fresh(){
 function edit(id){
   const x=data.find(v=>v.id===id);
   if(!x)return;
-  document.querySelector("form").reset();
+  $("dlg").querySelector("form").reset();
   $("delivery").value=x.delivery||"郵送";
   statusOptions(false);
   fields.forEach(k=>{
@@ -488,6 +543,7 @@ function edit(id){
     if($(k).type==="checkbox")$(k).checked=!!v;
     else $(k).value=v??"";
   });
+  setMeetTimeError("");
   syncLongScheduleUI();
   toggle();
   if(ss().includes(x.status))$("status").value=x.status;
@@ -507,13 +563,14 @@ $("new").onclick=fresh;
 $("delivery").onchange=toggle;
 $("type").onchange=toggle;
 $("longTerm").onchange=syncLongScheduleUI;
-$("meetTime").addEventListener("blur",formatMeetTimeInput);
+$("meetTime").addEventListener("blur",()=>formatMeetTimeInput(false));
+$("meetTime").addEventListener("input",()=>setMeetTimeError(""));
 document.querySelectorAll(".ship-chip").forEach(btn=>{
   btn.onclick=()=>{$("shipping").value=btn.dataset.ship||""};
 });
 
 $("save").onclick=()=>{
-  if(!formatMeetTimeInput())return;
+  if(!formatMeetTimeInput(true))return;
   const o={};
   fields.forEach(k=>{
     const el=$(k);
@@ -534,7 +591,7 @@ $("save").onclick=()=>{
     // normalizeData([o]) compacts order to 0, so restore the existing slot.
     data[i].order=o.order;
   }else{
-    o.id=crypto.randomUUID();
+    o.id=newId();
     o.createdAt=now;
     o.updated=now;
     o.archived=false;
@@ -544,8 +601,7 @@ $("save").onclick=()=>{
     normalized.order=o.order;
     data.push(normalized);
   }
-  saveData();
-  $("dlg").close();
+  if(saveData())$("dlg").close();
 };
 
 $("arc").onclick=()=>{
@@ -558,15 +614,15 @@ $("arc").onclick=()=>{
     const orders=data.filter(v=>!v.archived&&v.id!==x.id).map(v=>v.order);
     x.order=orders.length?Math.max(...orders)+1:0;
   }
-  saveData();
-  $("dlg").close();
+  if(saveData())$("dlg").close();
 };
 $("del").onclick=()=>{
   const id=$("id").value;
   if(id&&confirm("この取引を削除しますか？")){
+    const previous=data;
     data=data.filter(x=>x.id!==id);
-    saveData();
-    $("dlg").close();
+    if(saveData())$("dlg").close();
+    else data=previous;
   }
 };
 $("bulkArchive").onclick=()=>{
@@ -622,7 +678,7 @@ $("export").onclick=()=>{
   a.href=URL.createObjectURL(blob);
   a.download="torihiki-note.json";
   a.click();
-  URL.revokeObjectURL(a.href);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 
 $("import").onchange=async e=>{
@@ -643,12 +699,28 @@ $("import").onchange=async e=>{
     }
 
     // Keep the current dataset in a separate browser key before replacement.
-    localStorage.setItem(IMPORT_BACKUP_KEY,JSON.stringify({
-      savedAt:new Date().toISOString(),
-      trades:data
-    }));
+    try{
+      localStorage.setItem(IMPORT_BACKUP_KEY,JSON.stringify({
+        savedAt:new Date().toISOString(),
+        trades:data
+      }));
+    }catch(err){
+      console.error(err);
+      alert("現在のデータの退避に失敗したため、読み込みを中止しました。");
+      e.target.value="";
+      return;
+    }
+
+    try{
+      localStorage.setItem(KEY,JSON.stringify(normalized));
+    }catch(err){
+      console.error(err);
+      alert("読み込んだデータを保存できませんでした。現在のデータは置き換えていません。");
+      e.target.value="";
+      return;
+    }
+
     data=normalized;
-    localStorage.setItem(KEY,JSON.stringify(data));
     render();
   }catch(err){
     alert("読み込めないファイルです。");

@@ -9,7 +9,7 @@
   <link href="./favicon.png" rel="icon" type="image/png"/>
   <link href="./favicon.ico" rel="icon"/>
   <link href="./apple-touch-icon.png" rel="apple-touch-icon"/>
-  <link href="styles.css?v=0104p" rel="stylesheet"/>
+  <link href="styles.css?v=0106p" rel="stylesheet"/>
  </head>
  <body>
   <header>
@@ -282,7 +282,8 @@
      </label>
      <label>
       手渡し時間（任意）
-      <input id="meetTime" inputmode="numeric" placeholder="例 1400 → 14:00" type="text"/>
+      <input aria-describedby="meetTimeError" id="meetTime" inputmode="numeric" placeholder="例 1400 → 14:00" type="text"/>
+      <span class="field-error hide" id="meetTimeError">「1400」「930」「14」「14:30」などで入力してください。</span>
      </label>
      <label>
       手渡し場所
@@ -342,7 +343,7 @@
     <input accept=".json" id="import" type="file"/>
    </label>
   </footer>
-  <script src="app.js?v=0105p">
+  <script src="app.js?v=0106p">
   </script>
  </body>
 </html>

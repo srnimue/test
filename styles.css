@@ -489,3 +489,16 @@ main{padding-bottom:16px !important}
     grid-template-columns:1fr;
   }
 }
+
+/* v0.10.6 preview: validation and disabled reorder controls */
+.field-error{
+  display:block;
+  margin-top:5px;
+  color:#a22;
+  font-size:12px;
+  line-height:1.45;
+}
+.move-btn:disabled{
+  opacity:.35;
+  cursor:not-allowed;
+}
