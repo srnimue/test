@@ -9,7 +9,7 @@
   <link href="./favicon.png" rel="icon" type="image/png"/>
   <link href="./favicon.ico" rel="icon"/>
   <link href="./apple-touch-icon.png" rel="apple-touch-icon"/>
-  <link href="styles.css?v=0103p" rel="stylesheet"/>
+  <link href="styles.css?v=0104p" rel="stylesheet"/>
  </head>
  <body>
   <header>
@@ -179,6 +179,43 @@
        </option>
       </select>
      </label>
+     <label class="check long-check">
+      <input id="longTerm" type="checkbox"/>
+      長期のお取引
+     </label>
+     <div class="long-schedule hide" id="longSchedule">
+      <label>
+       予定年
+       <input id="longYear" inputmode="numeric" maxlength="4" placeholder="例 2027" type="text"/>
+      </label>
+      <label>
+       予定月
+       <select id="longMonth">
+        <option value="">未定</option>
+        <option value="1">1月</option>
+        <option value="2">2月</option>
+        <option value="3">3月</option>
+        <option value="4">4月</option>
+        <option value="5">5月</option>
+        <option value="6">6月</option>
+        <option value="7">7月</option>
+        <option value="8">8月</option>
+        <option value="9">9月</option>
+        <option value="10">10月</option>
+        <option value="11">11月</option>
+        <option value="12">12月</option>
+       </select>
+      </label>
+      <label>
+       時期
+       <select id="longPeriod">
+        <option value="">未定</option>
+        <option>上旬</option>
+        <option>中旬</option>
+        <option>下旬</option>
+       </select>
+      </label>
+     </div>
      <label>
       ステータス
       <select id="status">
@@ -272,10 +309,6 @@
      <input id="addressExchanged" type="checkbox"/>
      住所交換済み
     </label>
-    <label class="check long-check">
-     <input id="longTerm" type="checkbox"/>
-     長期のお取引
-    </label>
     <label>
      メモ
      <textarea id="memo" rows="4"></textarea>
@@ -309,7 +342,7 @@
     <input accept=".json" id="import" type="file"/>
    </label>
   </footer>
-  <script src="app.js?v=0103p">
+  <script src="app.js?v=0104p">
   </script>
  </body>
 </html>

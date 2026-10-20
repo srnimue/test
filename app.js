@@ -7,7 +7,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 
 const post=["DM確認中","内容確定","発送待ち","発送済み","到着確認","完了"];
 const meet=["DM確認中","内容確定","受け渡し待ち","完了"];
-const fields=["id","type","delivery","status","name","xid","items","myShip","theirShip","shipping","tracking","meetDate","meetTime","meetPlace","price","postage","paid","addressExchanged","longTerm","memo"];
+const fields=["id","type","delivery","status","name","xid","items","myShip","theirShip","shipping","tracking","meetDate","meetTime","meetPlace","price","postage","paid","addressExchanged","longTerm","longYear","longMonth","longPeriod","memo"];
 
 let archiveView=false;
 let reorderMode=false;
@@ -71,6 +71,9 @@ function normalizeData(raw){
       paid:!!x.paid,
       addressExchanged:!!x.addressExchanged,
       longTerm:!!x.longTerm,
+      longYear:safeString(x.longYear,4),
+      longMonth:safeString(x.longMonth,2),
+      longPeriod:safeString(x.longPeriod,8),
       memo:safeString(x.memo,20000),
       archived:!!x.archived,
       createdAt,
@@ -284,7 +287,7 @@ function render(){
       </div>
       <h3>${esc(x.name||x.xid||"相手未入力")}</h3>
       <p>${esc(x.items||"取引内容未入力")}</p>
-      <div class="meta">${x.xid?`<span>${xLink(x.xid)}</span>`:""}${details}</div>
+      <div class="meta">${x.xid?`<span>${xLink(x.xid)}</span>`:""}${x.longTerm?`<span class="long-schedule-label">${longScheduleText(x)}</span>`:""}${details}</div>
     </article>`;
   }).join("") : `<div class="card">${eventView?"手渡しの取引はありません。":"該当する取引はありません。"}</div>`;
 
@@ -442,6 +445,21 @@ function formatMeetTimeInput(){
   return true;
 }
 
+
+function syncLongScheduleUI(){
+  const on=$("longTerm").checked;
+  $("longSchedule").classList.toggle("hide",!on);
+}
+
+function longScheduleText(x){
+  if(!x.longTerm)return "";
+  const year=x.longYear?`${esc(x.longYear)}年`:"";
+  const month=x.longMonth?`${esc(x.longMonth)}月`:"";
+  const period=x.longPeriod?esc(x.longPeriod):"";
+  const body=`${year}${month}${period}`;
+  return body?`⏳ ${body}予定`:"⏳ 長期";
+}
+
 function fresh(){
   document.querySelector("form").reset();
   $("id").value="";
@@ -452,6 +470,7 @@ function fresh(){
   $("registeredAt").classList.add("hide");
   $("del").classList.add("hide");
   $("arc").classList.add("hide");
+  syncLongScheduleUI();
   toggle();
   $("dlg").showModal();
 }
@@ -467,6 +486,7 @@ function edit(id){
     if($(k).type==="checkbox")$(k).checked=!!v;
     else $(k).value=v??"";
   });
+  syncLongScheduleUI();
   toggle();
   if(ss().includes(x.status))$("status").value=x.status;
   $("title").textContent="取引を編集";
@@ -484,6 +504,7 @@ $("closeHelp").onclick=()=>$("helpDlg").close();
 $("new").onclick=fresh;
 $("delivery").onchange=toggle;
 $("type").onchange=toggle;
+$("longTerm").onchange=syncLongScheduleUI;
 $("meetTime").addEventListener("blur",formatMeetTimeInput);
 document.querySelectorAll(".ship-chip").forEach(btn=>{
   btn.onclick=()=>{$("shipping").value=btn.dataset.ship||""};

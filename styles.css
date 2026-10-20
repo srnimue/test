@@ -470,3 +470,22 @@ main{padding-bottom:16px !important}
   line-height:1;
   white-space:nowrap;
 }
+
+/* v0.10.4 preview: long-term rough schedule */
+.long-schedule{
+  grid-column:1 / -1;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  margin-top:2px;
+}
+.long-schedule.hide{display:none}
+.long-schedule-label{
+  white-space:nowrap;
+  font-weight:600;
+}
+@media(max-width:600px){
+  .long-schedule{
+    grid-template-columns:1fr;
+  }
+}
