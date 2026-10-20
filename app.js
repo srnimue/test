@@ -264,11 +264,13 @@ function render(){
     }
 
     const list=d==="手渡し"?meet:post;
-    const details=d==="手渡し"
-      ? `${x.meetDate
-          ? `${dateMeta("手渡し日",x.meetDate,x.status,"meet")}${x.meetTime?`<span>時間 ${esc(x.meetTime)}</span>`:`<span class="unset">時間 未定</span>`}`
-          : `<span class="unset">手渡し日 未設定</span>`}${x.meetPlace?`<span>場所 ${esc(x.meetPlace)}</span>`:""}`
-      : `${x.myShip?dateMeta("自分発送",x.myShip,x.status,"myShip"):`<span class="unset">自分発送 未設定</span>`}${x.theirShip?dateMeta("相手発送",x.theirShip,x.status,"theirShip"):`<span class="unset">相手発送 未設定</span>`}`;
+    const details=x.longTerm
+      ? `<span class="long-schedule-label">${longScheduleText(x)}</span>`
+      : d==="手渡し"
+        ? `${x.meetDate
+            ? `${dateMeta("手渡し日",x.meetDate,x.status,"meet")}${x.meetTime?`<span>時間 ${esc(x.meetTime)}</span>`:`<span class="unset">時間 未定</span>`}`
+            : `<span class="unset">手渡し日 未設定</span>`}${x.meetPlace?`<span>場所 ${esc(x.meetPlace)}</span>`:""}`
+        : `${x.myShip?dateMeta("自分発送",x.myShip,x.status,"myShip"):`<span class="unset">自分発送 未設定</span>`}${x.theirShip?dateMeta("相手発送",x.theirShip,x.status,"theirShip"):`<span class="unset">相手発送 未設定</span>`}`;
 
     return `<article class="card" data-id="${idAttr}">
       <div class="top">
@@ -287,7 +289,7 @@ function render(){
       </div>
       <h3>${esc(x.name||x.xid||"相手未入力")}</h3>
       <p>${esc(x.items||"取引内容未入力")}</p>
-      <div class="meta">${x.xid?`<span>${xLink(x.xid)}</span>`:""}${x.longTerm?`<span class="long-schedule-label">${longScheduleText(x)}</span>`:""}${details}</div>
+      <div class="meta">${x.xid?`<span>${xLink(x.xid)}</span>`:""}${details}</div>
     </article>`;
   }).join("") : `<div class="card">${eventView?"手渡しの取引はありません。":"該当する取引はありません。"}</div>`;
 
