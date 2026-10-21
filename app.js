@@ -1,4 +1,28 @@
 const KEY="torihiki-note-v03";
+
+const UI_KEY="torihiki_ui_state_v1";
+
+function loadUiState(){
+  try{
+    const raw=localStorage.getItem(UI_KEY);
+    if(!raw) return {};
+    const parsed=JSON.parse(raw);
+    return parsed&&typeof parsed==="object"?parsed:{};
+  }catch(e){
+    return {};
+  }
+}
+
+function saveUiState(){
+  try{
+    localStorage.setItem(UI_KEY,JSON.stringify({
+      mode:eventMode?"event":longMode?"long":"normal",
+      filter:filter,
+      archiveMode:archiveMode
+    }));
+  }catch(e){}
+}
+
 const OLD_KEY="torihiki-note-v01";
 const IMPORT_BACKUP_KEY="torihiki-note-v03-pre-import-backup";
 
@@ -89,6 +113,16 @@ function normalizeData(raw){
       longYear:safeString(x.longYear,4),
       longMonth:safeString(x.longMonth,2),
       longPeriod:safeString(x.longPeriod,8),
+      tags:Array.isArray(x.tags)
+        ? x.tags
+            .filter(t=>t&&typeof t==="object")
+            .map(t=>({
+              name:safeString(t.name,40).trim(),
+              color:["blue","yellow","orange","green","pink","red","purple","gray"].includes(t.color)?t.color:"gray"
+            }))
+            .filter(t=>t.name)
+            .slice(0,12)
+        : [],
       memo:safeString(x.memo,20000),
       archived:!!x.archived,
       createdAt,
@@ -182,6 +216,7 @@ function saveData(){
   return true;
 }
 function render(){
+  saveUiState();
   const live=data.filter(x=>!x.archived);
   const active=live.filter(x=>x.status!=="完了").length;
   const done=live.filter(x=>x.status==="完了").length;
@@ -205,7 +240,7 @@ function render(){
   $("eventModeBtn").setAttribute("aria-pressed",String(eventView));
   $("eventModeBtn").title=eventView?"通常表示に戻る":"イベント表示";
   $("eventHint").classList.toggle("hide",!eventView);
-  $("longModeBtn").textContent="⏳";
+  $("longModeBtn").textContent="📌";
   $("longModeBtn").classList.toggle("active",longView);
   $("longModeBtn").setAttribute("aria-pressed",String(longView));
   $("longModeBtn").title=longView?"通常表示に戻る":"長期表示";
@@ -286,8 +321,9 @@ function render(){
           </div>
           ${x.status==="完了"
             ? `<span class="event-done-label">✓ 済み</span>`
-            : `<button type="button" class="event-done-btn" data-id="${idAttr}">受け渡し済み</button>`}
+            : `<button type="button" class="event-done-btn" data-id="${idAttr}">完了にする</button>`}
         </div>
+        ${renderTagChips(x.tags)}
         <div class="event-meta">${handDetails}</div>
         <p>${esc(x.items||"取引内容未入力")}</p>
       </article>`;
@@ -309,7 +345,7 @@ function render(){
           <span class="badge">${d==="手渡し"?"🤝 手渡し":"📮 郵送"}</span>
           ${d==="郵送"&&x.addressExchanged?`<span class="status-mini" title="住所交換済">🏠</span>`:""}
           ${x.type!=="交換"&&x.paid?`<span class="status-mini" title="支払い済">💰</span>`:""}
-          ${x.longTerm?`<span class="long-icon" title="長期のお取引" aria-label="長期のお取引">⏳</span>`:""}
+          ${x.longTerm?`<span class="long-icon" title="長期のお取引" aria-label="長期のお取引">📌</span>`:""}
         </div>
         ${x.archived
           ? '<span class="badge">Archive</span>'
@@ -318,6 +354,7 @@ function render(){
             : `<select class="quick" data-id="${idAttr}">${list.map(s=>`<option ${s===x.status?"selected":""}>${s}</option>`).join("")}</select>`)}
       </div>
       <h3>${esc(x.name||x.xid||"相手未入力")}</h3>
+      ${renderTagChips(x.tags)}
       <p>${esc(x.items||"取引内容未入力")}</p>
       <div class="meta">${x.xid?`<span>${xLink(x.xid)}</span>`:""}${details}</div>
     </article>`;
@@ -513,7 +550,119 @@ function longScheduleText(x){
   const month=x.longMonth?`${esc(x.longMonth)}月`:"";
   const period=x.longPeriod?esc(x.longPeriod):"";
   const body=`${year}${month}${period}`;
-  return body?`⏳ ${body}予定`:"⏳ 長期";
+  return body?`📌 ${body}予定`:"📌 長期";
+}
+
+
+const TAG_COLORS=[
+  ["blue","ブルー"],
+  ["yellow","イエロー"],
+  ["orange","オレンジ"],
+  ["green","グリーン"],
+  ["pink","ピンク"],
+  ["red","レッド"],
+  ["purple","パープル"],
+  ["gray","グレー"]
+];
+
+function tagChipHtml(tag){
+  return `<span class="tag-chip tag-${esc(tag.color||"gray")}">${esc(tag.name||"")}</span>`;
+}
+
+function renderTagChips(tags){
+  return Array.isArray(tags)&&tags.length
+    ? `<div class="tag-list">${tags.map(tagChipHtml).join("")}</div>`
+    : "";
+}
+
+function addTagRow(tag={name:"",color:"gray"}){
+  const row=document.createElement("div");
+  row.className="tag-row";
+  row.innerHTML=`
+    <input class="tag-name" maxlength="40" placeholder="例：作品名" value="${esc(tag.name||"")}">
+    <select class="tag-color">
+      ${TAG_COLORS.map(([value,label])=>`<option value="${value}" ${value===(tag.color||"gray")?"selected":""}>${label}</option>`).join("")}
+    </select>
+    <button class="tag-remove" type="button" aria-label="タグを削除">×</button>
+  `;
+  row.querySelector(".tag-remove").onclick=()=>{
+    row.remove();
+    renderRecentTags();
+  };
+  row.querySelector(".tag-name").addEventListener("input",renderRecentTags);
+  $("tagEditor").appendChild(row);
+  renderRecentTags();
+}
+
+function setTagEditor(tags=[]){
+  $("tagEditor").innerHTML="";
+  (Array.isArray(tags)?tags:[]).forEach(addTagRow);
+  renderRecentTags();
+}
+
+function readTagsFromEditor(){
+  return [...$("tagEditor").querySelectorAll(".tag-row")]
+    .map(row=>({
+      name:row.querySelector(".tag-name").value.trim(),
+      color:row.querySelector(".tag-color").value
+    }))
+    .filter(tag=>tag.name)
+    .slice(0,12);
+}
+
+
+function getRecentTags(limit=8){
+  const latest=new Map();
+  for(const x of data){
+    const stamp=Date.parse(x.updated||x.createdAt||"")||0;
+    for(const tag of (Array.isArray(x.tags)?x.tags:[])){
+      const name=String(tag.name||"").trim();
+      if(!name) continue;
+      const key=name.toLocaleLowerCase("ja-JP");
+      const current=latest.get(key);
+      if(!current || stamp>=current.stamp){
+        latest.set(key,{name,color:tag.color||"gray",stamp});
+      }
+    }
+  }
+  return [...latest.values()]
+    .sort((a,b)=>b.stamp-a.stamp || a.name.localeCompare(b.name,"ja"))
+    .slice(0,limit);
+}
+
+function currentTagNames(){
+  return new Set(
+    [...$("tagEditor").querySelectorAll(".tag-name")]
+      .map(el=>el.value.trim().toLocaleLowerCase("ja-JP"))
+      .filter(Boolean)
+  );
+}
+
+function renderRecentTags(){
+  const wrap=$("recentTagsWrap");
+  const box=$("recentTags");
+  if(!wrap||!box) return;
+  const tags=getRecentTags(8);
+  box.innerHTML="";
+  if(!tags.length){
+    wrap.classList.add("hide");
+    return;
+  }
+  wrap.classList.remove("hide");
+  const used=currentTagNames();
+  tags.forEach(tag=>{
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className=`recent-tag-btn tag-chip tag-${tag.color||"gray"}`;
+    btn.textContent=tag.name;
+    btn.disabled=used.has(tag.name.toLocaleLowerCase("ja-JP"));
+    btn.onclick=()=>{
+      if(currentTagNames().has(tag.name.toLocaleLowerCase("ja-JP"))) return;
+      addTagRow({name:tag.name,color:tag.color||"gray"});
+      renderRecentTags();
+    };
+    box.appendChild(btn);
+  });
 }
 
 function fresh(){
@@ -527,6 +676,7 @@ function fresh(){
   $("del").classList.add("hide");
   $("arc").classList.add("hide");
   setMeetTimeError("");
+  setTagEditor([]);
   syncLongScheduleUI();
   toggle();
   $("dlg").showModal();
@@ -544,6 +694,7 @@ function edit(id){
     else $(k).value=v??"";
   });
   setMeetTimeError("");
+  setTagEditor(x.tags||[]);
   syncLongScheduleUI();
   toggle();
   if(ss().includes(x.status))$("status").value=x.status;
@@ -563,6 +714,7 @@ $("new").onclick=fresh;
 $("delivery").onchange=toggle;
 $("type").onchange=toggle;
 $("longTerm").onchange=syncLongScheduleUI;
+$("addTagBtn").onclick=()=>addTagRow();
 $("meetTime").addEventListener("blur",()=>formatMeetTimeInput(false));
 $("meetTime").addEventListener("input",()=>setMeetTimeError(""));
 document.querySelectorAll(".ship-chip").forEach(btn=>{
@@ -577,6 +729,7 @@ $("save").onclick=()=>{
     if(!el){ o[k]=""; return; }
     o[k]=el.type==="checkbox"?el.checked:el.value.trim();
   });
+  o.tags=readTagsFromEditor();
 
   const now=new Date().toISOString();
   const i=data.findIndex(x=>x.id===o.id);
@@ -729,7 +882,23 @@ $("import").onchange=async e=>{
 };
 
 try{
-  render();
+  
+const savedUiState=loadUiState();
+if(savedUiState.mode==="event"){
+  eventMode=true;
+  longMode=false;
+}else if(savedUiState.mode==="long"){
+  longMode=true;
+  eventMode=false;
+}else{
+  eventMode=false;
+  longMode=false;
+}
+if(["active","done","all"].includes(savedUiState.filter)){
+  filter=savedUiState.filter;
+}
+archiveMode=!!savedUiState.archiveMode;
+render();
 }catch(err){
   console.error(err);
   const cards=$("cards");

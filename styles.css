@@ -502,3 +502,113 @@ main{padding-bottom:16px !important}
   opacity:.35;
   cursor:not-allowed;
 }
+
+
+/* v0.10.7 preview: colored tags */
+.tag-editor-wrap{
+  margin-top:14px;
+}
+.tag-editor-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  font-size:13px;
+  color:#655f58;
+}
+#addTagBtn{
+  padding:6px 9px;
+  font-size:12px;
+}
+#tagEditor{
+  display:grid;
+  gap:7px;
+  margin-top:7px;
+}
+.tag-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 110px 38px;
+  gap:7px;
+  align-items:center;
+}
+.tag-row input,
+.tag-row select{
+  width:100%;
+  margin:0;
+}
+.tag-remove{
+  width:38px;
+  height:38px;
+  padding:0;
+  font-size:18px;
+}
+.tag-help{
+  display:block;
+  margin-top:6px;
+  line-height:1.45;
+}
+.tag-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin:6px 0 2px;
+}
+.tag-chip{
+  display:inline-flex;
+  align-items:center;
+  max-width:100%;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:11px;
+  line-height:1.4;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  border:1px solid rgba(39,37,34,.10);
+}
+.tag-gray{background:#ece9e5;color:#4d4944}
+.tag-pink{background:#f7dfe7;color:#704653}
+.tag-red{background:#f4d9d9;color:#7a3f3f}
+.tag-orange{background:#f7e2d1;color:#744b2f}
+.tag-yellow{background:#f5edc9;color:#665d2d}
+.tag-green{background:#dfeee2;color:#3e6048}
+.tag-blue{background:#dfeaf4;color:#3d5870}
+.tag-purple{background:#e9e1f3;color:#58496b}
+.event-card .tag-list{
+  margin-top:8px;
+}
+@media(max-width:600px){
+  .tag-row{
+    grid-template-columns:minmax(0,1fr) 92px 36px;
+  }
+  .tag-chip{
+    font-size:10px;
+    padding:3px 7px;
+  }
+}
+
+
+/* v0.10.9 preview: recent tags */
+.recent-tags-wrap{
+  margin-top:10px;
+}
+.recent-tags-title{
+  margin-bottom:6px;
+  font-size:12px;
+  color:#756f67;
+}
+.recent-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.recent-tag-btn{
+  appearance:none;
+  cursor:pointer;
+  font-family:inherit;
+}
+.recent-tag-btn:disabled{
+  opacity:.42;
+  cursor:default;
+}
