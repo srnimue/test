@@ -16,9 +16,10 @@ function loadUiState(){
 function saveUiState(){
   try{
     localStorage.setItem(UI_KEY,JSON.stringify({
-      mode:eventMode?"event":longMode?"long":"normal",
-      filter:filter,
-      archiveMode:archiveMode
+      mode:eventView?"event":longView?"long":"normal",
+      filter:$("filter")?.value||"active",
+      archiveView:archiveView,
+      selectedTags:[...selectedTags]
     }));
   }catch(e){}
 }
@@ -34,6 +35,7 @@ const meet=["DM確認中","内容確定","受け渡し待ち","完了"];
 const fields=["id","type","delivery","status","name","xid","items","myShip","theirShip","shipping","tracking","meetDate","meetTime","meetPlace","price","postage","paid","addressExchanged","longTerm","longYear","longMonth","longPeriod","memo"];
 
 let archiveView=false;
+let selectedTags=new Set();
 let reorderMode=false;
 let eventView=false;
 let longView=false;
@@ -215,8 +217,90 @@ function saveData(){
   }
   return true;
 }
+
+function tagOptionsForCurrentView(){
+  let source;
+  if(eventView) source=data.filter(x=>!x.archived&&x.delivery==="手渡し");
+  else if(longView) source=data.filter(x=>!x.archived&&x.longTerm);
+  else if(archiveView) source=data.filter(x=>x.archived);
+  else source=data.filter(x=>!x.archived);
+
+  const map=new Map();
+  for(const x of source){
+    for(const tag of (Array.isArray(x.tags)?x.tags:[])){
+      const name=String(tag.name||"").trim();
+      if(!name) continue;
+      const key=name.toLocaleLowerCase("ja-JP");
+      if(!map.has(key)) map.set(key,{key,name,color:tag.color||"gray"});
+    }
+  }
+  return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+}
+
+function itemMatchesSelectedTags(x){
+  if(!selectedTags.size) return true;
+  const keys=new Set(
+    (Array.isArray(x.tags)?x.tags:[])
+      .map(tag=>String(tag.name||"").trim().toLocaleLowerCase("ja-JP"))
+      .filter(Boolean)
+  );
+  return [...selectedTags].some(key=>keys.has(key));
+}
+
+function renderTagFilter(){
+  const wrap=$("tagFilterWrap");
+  const toggle=$("tagFilterToggle");
+  const panel=$("tagFilterPanel");
+  const chips=$("tagFilterChips");
+  const clear=$("clearTagFilter");
+  if(!wrap||!toggle||!panel||!chips||!clear) return;
+
+  const options=tagOptionsForCurrentView();
+  const validKeys=new Set(options.map(tag=>tag.key));
+  for(const key of [...selectedTags]){
+    if(!validKeys.has(key)) selectedTags.delete(key);
+  }
+
+  wrap.classList.toggle("hide",options.length===0);
+  if(!options.length){
+    chips.innerHTML="";
+    panel.classList.add("hide");
+    return;
+  }
+
+  const alwaysOpen=eventView||longView;
+  if(alwaysOpen){
+    panel.classList.remove("hide");
+    toggle.classList.add("hide");
+  }else{
+    toggle.classList.remove("hide");
+    const expanded=toggle.getAttribute("aria-expanded")==="true";
+    panel.classList.toggle("hide",!expanded);
+  }
+
+  chips.innerHTML="";
+  options.forEach(tag=>{
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className=`tag-filter-chip tag-chip tag-${tag.color||"gray"}`;
+    btn.textContent=tag.name;
+    const active=selectedTags.has(tag.key);
+    btn.classList.toggle("selected",active);
+    btn.setAttribute("aria-pressed",active?"true":"false");
+    btn.onclick=()=>{
+      if(selectedTags.has(tag.key)) selectedTags.delete(tag.key);
+      else selectedTags.add(tag.key);
+      saveUiState();
+      render();
+    };
+    chips.appendChild(btn);
+  });
+  clear.classList.toggle("hide",selectedTags.size===0);
+}
+
 function render(){
   saveUiState();
+  renderTagFilter();
   const live=data.filter(x=>!x.archived);
   const active=live.filter(x=>x.status!=="完了").length;
   const done=live.filter(x=>x.status==="完了").length;
@@ -286,7 +370,8 @@ function render(){
   }
 
   let rows=base.filter(x=>{
-    const hit=!q||[x.name,x.xid,x.items,x.memo,x.type,x.status,x.meetPlace,x.meetDate,x.meetTime,x.shipping]
+    const hit=!q||[x.name,x.xid,x.items,x.memo,x.type,x.status,x.meetPlace,x.meetDate,x.meetTime,x.shipping,
+      ...(Array.isArray(x.tags)?x.tags.map(tag=>tag.name):[])]
       .join(" ")
       .toLowerCase()
       .includes(q);
@@ -297,6 +382,7 @@ function render(){
 
     return f==="all"||(f==="done"?x.status==="完了":x.status!=="完了");
   });
+  rows=rows.filter(itemMatchesSelectedTags);
   rows=orderedRows(rows);
   if(!eventView&&!longView&&!archiveView&&!q){
     rows.sort((a,b)=>(Number(a.longTerm)-Number(b.longTerm))||(a.order-b.order));
@@ -715,6 +801,19 @@ $("delivery").onchange=toggle;
 $("type").onchange=toggle;
 $("longTerm").onchange=syncLongScheduleUI;
 $("addTagBtn").onclick=()=>addTagRow();
+
+$("tagFilterToggle").onclick=()=>{
+  const panel=$("tagFilterPanel");
+  const willOpen=panel.classList.contains("hide");
+  panel.classList.toggle("hide",!willOpen);
+  $("tagFilterToggle").setAttribute("aria-expanded",willOpen?"true":"false");
+};
+$("clearTagFilter").onclick=()=>{
+  selectedTags.clear();
+  saveUiState();
+  render();
+};
+
 $("meetTime").addEventListener("blur",()=>formatMeetTimeInput(false));
 $("meetTime").addEventListener("input",()=>setMeetTimeError(""));
 document.querySelectorAll(".ship-chip").forEach(btn=>{
@@ -885,19 +984,28 @@ try{
   
 const savedUiState=loadUiState();
 if(savedUiState.mode==="event"){
-  eventMode=true;
-  longMode=false;
+  eventView=true;
+  longView=false;
 }else if(savedUiState.mode==="long"){
-  longMode=true;
-  eventMode=false;
+  longView=true;
+  eventView=false;
 }else{
-  eventMode=false;
-  longMode=false;
+  eventView=false;
+  longView=false;
 }
 if(["active","done","all"].includes(savedUiState.filter)){
-  filter=savedUiState.filter;
+  $("filter").value=savedUiState.filter;
 }
-archiveMode=!!savedUiState.archiveMode;
+archiveView=!!savedUiState.archiveView;
+selectedTags=new Set(
+  Array.isArray(savedUiState.selectedTags)
+    ? savedUiState.selectedTags.filter(v=>typeof v==="string")
+    : []
+);
+if(archiveView){
+  eventView=false;
+  longView=false;
+}
 render();
 }catch(err){
   console.error(err);

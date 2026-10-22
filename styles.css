@@ -612,3 +612,45 @@ main{padding-bottom:16px !important}
   opacity:.42;
   cursor:default;
 }
+
+
+/* v0.10.11 preview: tag filtering */
+.tag-filter-wrap{
+  margin:10px 0 12px;
+}
+.tag-filter-toggle{
+  width:100%;
+  padding:8px 10px;
+  font-size:12px;
+  background:#fff;
+  color:#554f48;
+  border:1px solid #d7d0c7;
+}
+.tag-filter-panel{
+  padding:9px 0 2px;
+}
+.tag-filter-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.tag-filter-chip{
+  appearance:none;
+  cursor:pointer;
+  font-family:inherit;
+  opacity:.68;
+  transform:translateY(0);
+}
+.tag-filter-chip.selected{
+  opacity:1;
+  box-shadow:0 0 0 2px rgba(45,42,38,.20);
+  transform:translateY(-1px);
+}
+.tag-filter-clear{
+  margin-top:8px;
+  padding:5px 8px;
+  font-size:11px;
+  background:#fff;
+  color:#6b655e;
+  border:1px solid #d7d0c7;
+}

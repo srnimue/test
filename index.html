@@ -9,7 +9,7 @@
   <link href="./favicon.png" rel="icon" type="image/png"/>
   <link href="./favicon.ico" rel="icon"/>
   <link href="./apple-touch-icon.png" rel="apple-touch-icon"/>
-  <link href="styles.css?v=0109p" rel="stylesheet"/>
+  <link href="styles.css?v=0111p" rel="stylesheet"/>
  </head>
  <body>
   <header>
@@ -71,6 +71,15 @@
     <button id="archives">
      Archive
     </button>
+   </div>
+   <div id="tagFilterWrap" class="tag-filter-wrap hide">
+    <button id="tagFilterToggle" class="tag-filter-toggle" type="button" aria-expanded="false">
+     🏷️ タグで絞り込み
+    </button>
+    <div id="tagFilterPanel" class="tag-filter-panel hide">
+     <div id="tagFilterChips" class="tag-filter-chips"></div>
+     <button id="clearTagFilter" class="tag-filter-clear hide" type="button">絞り込み解除</button>
+    </div>
    </div>
    <div id="cards">
    </div>
@@ -355,7 +364,7 @@
     <input accept=".json" id="import" type="file"/>
    </label>
   </footer>
-  <script src="app.js?v=0109p">
+  <script src="app.js?v=0111p">
   </script>
  </body>
 </html>
