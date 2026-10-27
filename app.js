@@ -661,39 +661,123 @@ function renderTagChips(tags){
     : "";
 }
 
-function addTagRow(tag={name:"",color:"gray"}){
-  const row=document.createElement("div");
-  row.className="tag-row";
-  row.innerHTML=`
-    <input class="tag-name" maxlength="40" placeholder="例：作品名" value="${esc(tag.name||"")}">
-    <select class="tag-color">
-      ${TAG_COLORS.map(([value,label])=>`<option value="${value}" ${value===(tag.color||"gray")?"selected":""}>${label}</option>`).join("")}
-    </select>
-    <button class="tag-remove" type="button" aria-label="タグを削除">×</button>
-  `;
-  row.querySelector(".tag-remove").onclick=()=>{
-    row.remove();
-    renderRecentTags();
-  };
-  row.querySelector(".tag-name").addEventListener("input",renderRecentTags);
-  $("tagEditor").appendChild(row);
-  renderRecentTags();
+
+let editingTags=[];
+
+function normalizeEditingTags(tags){
+  return (Array.isArray(tags)?tags:[])
+    .map(t=>({name:String(t.name||"").trim(),color:t.color||"gray"}))
+    .filter(t=>t.name)
+    .slice(0,12);
+}
+
+function renderSelectedTagChips(){
+  const box=$("selectedTagChips");
+  if(!box) return;
+  box.innerHTML="";
+  if(!editingTags.length){
+    const empty=document.createElement("div");
+    empty.className="tag-empty";
+    empty.textContent="タグなし";
+    box.appendChild(empty);
+    return;
+  }
+  editingTags.forEach((tag,index)=>{
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className=`selected-tag-chip tag-chip tag-${tag.color||"gray"}`;
+    btn.textContent=tag.name;
+    btn.onclick=()=>openTagComposer(index);
+    box.appendChild(btn);
+  });
 }
 
 function setTagEditor(tags=[]){
-  $("tagEditor").innerHTML="";
-  (Array.isArray(tags)?tags:[]).forEach(addTagRow);
+  editingTags=normalizeEditingTags(tags);
+  renderSelectedTagChips();
+  closeTagComposer();
   renderRecentTags();
 }
 
 function readTagsFromEditor(){
-  return [...$("tagEditor").querySelectorAll(".tag-row")]
-    .map(row=>({
-      name:row.querySelector(".tag-name").value.trim(),
-      color:row.querySelector(".tag-color").value
-    }))
-    .filter(tag=>tag.name)
-    .slice(0,12);
+  return normalizeEditingTags(editingTags);
+}
+
+function openTagComposer(index=null){
+  const composer=$("tagComposer");
+  composer.classList.remove("hide");
+  composer.dataset.index=index===null?"":String(index);
+
+  if(index===null){
+    $("tagComposerName").value="";
+    $("tagComposerColor").value="blue";
+    $("tagComposerSave").textContent="追加";
+    $("tagComposerContinue").classList.remove("hide");
+    $("tagComposerDelete").classList.add("hide");
+  }else{
+    const tag=editingTags[index];
+    $("tagComposerName").value=tag?.name||"";
+    $("tagComposerColor").value=tag?.color||"gray";
+    $("tagComposerSave").textContent="保存";
+    $("tagComposerContinue").classList.add("hide");
+    $("tagComposerDelete").classList.remove("hide");
+  }
+  $("tagComposerName").focus();
+}
+
+function closeTagComposer(){
+  const composer=$("tagComposer");
+  if(!composer) return;
+  composer.classList.add("hide");
+  composer.dataset.index="";
+  $("tagComposerName").value="";
+  $("tagComposerColor").value="blue";
+  $("tagComposerContinue").classList.remove("hide");
+  $("tagComposerDelete").classList.add("hide");
+}
+
+
+function saveTagComposer(keepOpen=false){
+  const name=$("tagComposerName").value.trim();
+  if(!name) return;
+  const color=$("tagComposerColor").value;
+  const rawIndex=$("tagComposer").dataset.index;
+  const index=rawIndex===""?null:Number(rawIndex);
+
+  const duplicateIndex=editingTags.findIndex(
+    (t,i)=>i!==index && t.name.toLocaleLowerCase("ja-JP")===name.toLocaleLowerCase("ja-JP")
+  );
+
+  if(duplicateIndex>=0){
+    editingTags[duplicateIndex]={name,color};
+    if(index!==null && index!==duplicateIndex) editingTags.splice(index,1);
+  }else if(index===null){
+    if(editingTags.length>=12) return;
+    editingTags.push({name,color});
+  }else{
+    editingTags[index]={name,color};
+  }
+
+  renderSelectedTagChips();
+  renderRecentTags();
+
+  if(keepOpen && index===null){
+    // Keep the chosen color for rapid multi-tag entry.
+    $("tagComposerName").value="";
+    $("tagComposer").dataset.index="";
+    $("tagComposerSave").textContent="追加";
+    $("tagComposerDelete").classList.add("hide");
+    $("tagComposerName").focus();
+  }else{
+    closeTagComposer();
+  }
+}
+
+function removeEditingTag(index){
+  editingTags.splice(index,1);
+  renderSelectedTagChips();
+  closeTagComposer();
+  renderRecentTags();
 }
 
 
@@ -707,7 +791,11 @@ function getRecentTags(limit=8){
       const key=name.toLocaleLowerCase("ja-JP");
       const current=latest.get(key);
       if(!current || stamp>=current.stamp){
-        latest.set(key,{name,color:tag.color||"gray",stamp});
+        latest.set(key,{
+          name,
+          color:tag.color||"gray",
+          stamp
+        });
       }
     }
   }
@@ -718,8 +806,8 @@ function getRecentTags(limit=8){
 
 function currentTagNames(){
   return new Set(
-    [...$("tagEditor").querySelectorAll(".tag-name")]
-      .map(el=>el.value.trim().toLocaleLowerCase("ja-JP"))
+    editingTags
+      .map(tag=>String(tag.name||"").trim().toLocaleLowerCase("ja-JP"))
       .filter(Boolean)
   );
 }
@@ -744,7 +832,8 @@ function renderRecentTags(){
     btn.disabled=used.has(tag.name.toLocaleLowerCase("ja-JP"));
     btn.onclick=()=>{
       if(currentTagNames().has(tag.name.toLocaleLowerCase("ja-JP"))) return;
-      addTagRow({name:tag.name,color:tag.color||"gray"});
+      editingTags.push({name:tag.name,color:tag.color||"gray"});
+      renderSelectedTagChips();
       renderRecentTags();
     };
     box.appendChild(btn);
@@ -800,7 +889,21 @@ $("new").onclick=fresh;
 $("delivery").onchange=toggle;
 $("type").onchange=toggle;
 $("longTerm").onchange=syncLongScheduleUI;
-$("addTagBtn").onclick=()=>addTagRow();
+$("addTagBtn").onclick=()=>openTagComposer();
+$("tagComposerSave").onclick=()=>saveTagComposer(false);
+$("tagComposerContinue").onclick=()=>saveTagComposer(true);
+$("tagComposerCancel").onclick=closeTagComposer;
+$("tagComposerDelete").onclick=()=>{
+  const rawIndex=$("tagComposer").dataset.index;
+  if(rawIndex==="") return;
+  removeEditingTag(Number(rawIndex));
+};
+$("tagComposerName").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    saveTagComposer(false);
+  }
+});
 
 $("tagFilterToggle").onclick=()=>{
   const panel=$("tagFilterPanel");

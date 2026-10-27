@@ -654,3 +654,70 @@ main{padding-bottom:16px !important}
   color:#6b655e;
   border:1px solid #d7d0c7;
 }
+
+/* v1.0: keep export/import button text consistent on iPhone Safari */
+footer button{color:#272522;}
+
+
+/* tag compact UI preview */
+.selected-tag-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+  min-height:30px;
+  align-items:center;
+}
+.selected-tag-chip{
+  appearance:none;
+  cursor:pointer;
+  font-family:inherit;
+  border-radius:999px;
+}
+.tag-empty{
+  font-size:12px;
+  color:#9a948d;
+  padding:3px 1px;
+}
+.tag-composer{
+  margin-top:9px;
+  padding:10px;
+  border:1px solid #ddd6ce;
+  border-radius:12px;
+  background:#faf8f5;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 110px;
+  gap:8px;
+}
+.tag-composer input,
+.tag-composer select{
+  width:100%;
+  margin:0;
+}
+.tag-composer-actions{
+  grid-column:1 / -1;
+  display:flex;
+  gap:7px;
+  justify-content:flex-end;
+}
+.tag-composer-actions button{
+  padding:6px 10px;
+  font-size:12px;
+}
+.danger-link{
+  color:#9a4e4e;
+  background:#fff;
+}
+.compact-tag-editor .recent-tags-wrap{
+  margin-top:10px;
+  padding-top:9px;
+  border-top:1px dashed #ddd6ce;
+}
+.compact-tag-editor .tag-help{
+  margin-top:8px;
+}
+@media(max-width:600px){
+  .tag-composer{
+    grid-template-columns:minmax(0,1fr) 92px;
+  }
+}

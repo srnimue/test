@@ -9,7 +9,7 @@
   <link href="./favicon.png" rel="icon" type="image/png"/>
   <link href="./favicon.ico" rel="icon"/>
   <link href="./apple-touch-icon.png" rel="apple-touch-icon"/>
-  <link href="styles.css?v=0111p" rel="stylesheet"/>
+  <link href="styles.css?v=101tag" rel="stylesheet"/>
  </head>
  <body>
   <header>
@@ -319,17 +319,36 @@
      <input id="addressExchanged" type="checkbox"/>
      住所交換済み
     </label>
-    <div class="tag-editor-wrap">
+    <div class="tag-editor-wrap compact-tag-editor">
      <div class="tag-editor-head">
       <span>タグ</span>
       <button id="addTagBtn" type="button">＋ タグ追加</button>
      </div>
-     <div id="tagEditor"></div>
-     <small class="tag-help">作品名やジャンルなど、好きな分類を複数付けられます。</small>
+     <div id="selectedTagChips" class="selected-tag-chips"></div>
+     <div id="tagComposer" class="tag-composer hide">
+      <input id="tagComposerName" maxlength="40" placeholder="タグ名">
+      <select id="tagComposerColor">
+       <option value="blue">ブルー</option>
+       <option value="yellow">イエロー</option>
+       <option value="orange">オレンジ</option>
+       <option value="green">グリーン</option>
+       <option value="pink">ピンク</option>
+       <option value="red">レッド</option>
+       <option value="purple">パープル</option>
+       <option value="gray">グレー</option>
+      </select>
+      <div class="tag-composer-actions">
+       <button id="tagComposerSave" type="button">追加</button>
+       <button id="tagComposerContinue" type="button">続けて追加</button>
+       <button id="tagComposerDelete" class="danger-link hide" type="button">削除</button>
+       <button id="tagComposerCancel" type="button">キャンセル</button>
+      </div>
+     </div>
      <div id="recentTagsWrap" class="recent-tags-wrap hide">
       <div class="recent-tags-title">最近使ったタグ</div>
       <div id="recentTags" class="recent-tags"></div>
      </div>
+     <small class="tag-help">タグをタップすると色変更・削除できます。</small>
     </div>
     <label>
      メモ
@@ -364,7 +383,7 @@
     <input accept=".json" id="import" type="file"/>
    </label>
   </footer>
-  <script src="app.js?v=0111p">
+  <script src="app.js?v=102tag">
   </script>
  </body>
 </html>
